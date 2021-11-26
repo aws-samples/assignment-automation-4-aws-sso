@@ -1,0 +1,19 @@
+{
+    "enterprise_sso": {
+        "enterprise_sso_management_account_id": "123456789012",
+        "enterprise_sso_exec_account_id": "123456789012",
+        "enterprise_sso_deployment_account_id": "123456789012",
+        "enterprise_sso_management_read_only_role": "assignment-management-read-only-role",
+        "enterprise_sso_management_role": "assignment-management-role",
+        "target_event_bus_name": "enterprise-aws-sso",
+        "assignment_definition_table_partition_key": "mappingId",
+        "assignment_definition_table_sort_key": "mappingValue",
+        "assignment_processing_queue_delivery_delay_seconds": 30,
+        "assignment_processing_queue_visibility_timeout_seconds": 300,
+        "assignment_defenition_handler_timeout_seconds": 300,
+        "assignment_execution_handler_timeout_seconds": 300,
+        "error_notifications_email": "email@example.com",
+        "codecommit_repository_name": "enterprise-aws-sso",
+        "codecommit_repository_branch_name": "main"
+    }
+}

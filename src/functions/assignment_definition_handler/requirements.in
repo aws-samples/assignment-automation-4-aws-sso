@@ -1,0 +1,4 @@
+boto3==1.19.10
+botocore==1.22.10
+aws-assume-role-lib
+aws_lambda_powertools

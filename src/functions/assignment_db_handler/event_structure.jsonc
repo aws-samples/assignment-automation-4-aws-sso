@@ -1,0 +1,17 @@
+{
+    "source": "permissionEventSource",
+    "detail": {
+        "permissions": [
+            {
+                "ActionType": "Add", //Possible values "Add" or "Remove"
+                "PermissionFor": "OrganizationalUnit", //Possible values "OrganizationalUnit"|"Account"|"Tag"|"Root",
+                "OrganizationalUnitName": "OU_Name",
+                "AccountNumber": 30010047,
+                "TagName": "tag",
+                "GroupName": "GroupX",
+                "UserName": "User Name",
+                "PermissionSetName": "AWSReadOnlyAccess"
+            }
+        ]
+    }
+}

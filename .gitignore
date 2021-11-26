@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VS Code
+.vscode
+
+# from CDK
+*.swp
+package-lock.json
+.pytest_cache
+.env
+*.egg-info
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
