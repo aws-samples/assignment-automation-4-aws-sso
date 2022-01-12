@@ -44,6 +44,88 @@
         1. the `--no-history` flag can be used to not preserve git history if desired.
 1. Once the repository exists and the code is pushed to it, execute `cdk deploy`. For all further changes, the newly created pipeline will be triggered for commits to the `main` branch.
 
+## Usage
+This solution is event driven and supports following events:
+### Create/Remove AWS SSO records
+In order to manipulate AWS SSO assigments following event structure is used: 
+```
+{
+    "source": "permissionEventSource",
+    "detail": {
+        "permissions": [
+            {
+                "ActionType": "Add", //Possible values "Add" or "Remove"
+                "PermissionFor": "OrganizationalUnit", //Possible values "OrganizationalUnit"|"Account"|"Tag"|"Root"
+                "OrganizationalUnitName": "OU_Name",
+                "AccountNumber": 30010047,
+                "Tag": "key=value",
+                "GroupName": "GroupX", 
+                "UserName": "User Name",
+                "PermissionSetName": "AWSReadOnlyAccess"
+            }
+        ]
+    }
+}
+
+``` 
+Based on the type of user entity (user or group) and permission abstration. Different fields are used.
+Examples:
+1. Add record for user and a signle account:
+```
+{
+    "source": "permissionEventSource",
+    "detail": {
+        "permissions": [
+            {
+                "ActionType": "Add", 
+                "PermissionFor": "Account"
+                "AccountNumber": 1234567890123,
+                "UserName": "User Name",
+                "PermissionSetName": "AWSReadOnlyAccess"
+            }
+        ]
+    }
+}
+```
+2. Add record for Organisation and group. It's important to use OU name and not not the ID:
+```
+{
+    "source": "permissionEventSource",
+    "detail": {
+        "permissions": [
+            {
+                "ActionType": "Add", 
+                "PermissionFor": "OrganizationalUnit",
+                "OrganizationalUnitName": "OU_Name",
+                "GroupName": "GroupX",
+                "PermissionSetName": "AWSReadOnlyAccess"
+            }
+        ]
+    }
+}
+```
+3. Remove record for Tag and group:
+```
+{
+    "source": "permissionEventSource",
+    "detail": {
+        "permissions": [
+            {
+                "ActionType": "Remove", 
+                "PermissionFor": "Tag",
+                "Tag": "key=value",
+                "GroupName": "GroupX",
+                "PermissionSetName": "AWSReadOnlyAccess"
+            }
+        ]
+    }
+}
+```
+Events metioned above will create records in DynamoDB, and trigger corresponding action in AWS SSO.
+DynamoDB acts as a signle point of truth, for any following actions. Having such records in DynamoDB will allow automatic assigment/removal of AWS SSO permisssion when moving accounts between OU as well as creating new accounts in OU. 
+### DB Records example:
+![architecture](DynamoDB.png)
+
 
 ## Limitations 
 

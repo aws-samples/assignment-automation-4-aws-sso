@@ -93,9 +93,13 @@ def handler(event, context):
                 target_principle = account_number
 
             elif permission_type == PERMISSION_FOR_TAG:
-                tag_name = permission_info["TagName"]
-                mapping_value_prefix = f"t:{account_number}"
+                tag_name = permission_info["Tag"]
+                mapping_value_prefix = f"t:{tag_name}"
                 target_principle = tag_name
+
+            elif permission_type == PERMISSION_FOR_ROOT:
+                mapping_value_prefix = f"r:root"
+                target_principle = "root"
             else:
                 raise AttributeError
 
