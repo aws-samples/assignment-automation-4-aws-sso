@@ -12,35 +12,35 @@
     - *enterprise_sso_deployment_account_id*: AWS Account Id that will have the AWS CodePipeline pipeline deployed to.
 1. Set `AWS_DEFAULT_REGION` environment variables to the desired value
 1. Bootstrap all AWS accounts using the new bootstrap style. More information [here](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping):
-1. Bootstrap deployment account:
+    1. Bootstrap deployment account:
 
-    ```sh
-    env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
-    --profile deployment_profile \
-    --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
-    aws://111111111111/us-east-1
-    ```
-
-1. Bootstrap management account:
-
-    ```sh
-    env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
-    --profile management_profile \
-    --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
-    --trust 11111111111 \
-    aws://222222222222/us-east-2
-    ```
-
-1. Bootstrap iam account:
-
-    ```sh
-
-    env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
-    --profile iam_profile \
+        ```sh
+        env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
+        --profile deployment_profile \
         --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
-    --trust 11111111111 \
-    aws://3333333333333/us-east-2
-    ```
+        aws://111111111111/us-east-1
+        ```
+
+    1. Bootstrap management account:
+
+        ```sh
+        env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
+        --profile management_profile \
+        --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+        --trust 11111111111 \
+        aws://222222222222/us-east-2
+        ```
+
+    1. Bootstrap iam account:
+
+        ```sh
+
+        env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
+        --profile iam_profile \
+            --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+        --trust 11111111111 \
+        aws://3333333333333/us-east-2
+        ```
 
 1. Setup environment variables for accessing the deployment AWS account.
 1. For an initial deployment, the initial_deployment.py script can be used, which creates a codecommit repository and pushes the code using settings from `cdk.context.json`.
