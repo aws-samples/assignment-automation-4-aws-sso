@@ -90,7 +90,7 @@ Examples:
         "permissions": [
             {
                 "ActionType": "Add",
-                "PermissionFor": "Account"
+                "PermissionFor": "Account",
                 "AccountNumber": 1234567890123,
                 "UserName": "User Name",
                 "PermissionSetName": "AWSReadOnlyAccess"
