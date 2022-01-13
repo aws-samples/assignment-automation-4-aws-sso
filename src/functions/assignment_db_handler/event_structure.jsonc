@@ -7,7 +7,7 @@
                 "PermissionFor": "OrganizationalUnit", //Possible values "OrganizationalUnit"|"Account"|"Tag"|"Root",
                 "OrganizationalUnitName": "OU_Name",
                 "AccountNumber": 30010047,
-                "TagName": "tag",
+                "Tag": "key=value",
                 "GroupName": "GroupX",
                 "UserName": "User Name",
                 "PermissionSetName": "AWSReadOnlyAccess"
