@@ -58,6 +58,7 @@ To install provided module following prerequisites needs to be satisfied:
         aws://222222222222/us-east-1
         ```
 
+    1. If deploying to another region (set in the `AWS_DEFAULT_REGION` variable), bootstrap deployment account for the additional region:
         ```sh
         env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
         --profile management_profile \
