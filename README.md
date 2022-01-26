@@ -4,50 +4,88 @@
 
 ![architecture](sso_assignments.png)
 
+## Installation prerequisites
+
+To install provided module following prerequisites needs to be satisfied:
+
+- AWS CDK v2 CLI - <https://docs.aws.amazon.com/cdk/v2/guide/cli.html>
+  - TLDR: `npm install -g aws-cdk`
+- Docker - <https://docs.docker.com/get-docker/>
+- requirements from `requirements.txt` file installed into your python environment
+- At least 2 accounts:
+  - AWS Organizations Management account
+  - AWS account for Deployment and Execution
+- Deployment and Execution can be separate AWS accounts if required.
+
 ## Deployment notes
 
-1. Modify cdk.context.json with appropriate accounts information as well as variables and commit changes. Main ones are:
+1. Modify cdk.context.json with appropriate accounts information as well as variables and commit changes. At the bare minimum the following 4 parameters need to be changed:
     - *enterprise_sso_management_account_id*: AWS Account Id of the AWS Organization Management Account
     - *enterprise_sso_exec_account_id*: AWS Account Id where the application will be running in. Should NOT be the same as the AWS Organization management account.
-    - *enterprise_sso_deployment_account_id*: AWS Account Id that will have the AWS CodePipeline pipeline deployed to.
+    - *enterprise_sso_deployment_account_id*: AWS Account Id that will have the AWS CodePipeline pipeline deployed to. Can be the same as *enterprise_sso_exec_account_id*
+    - *error_notifications_email*: Notification email for error messages
+
+    **Make sure to commit these changes ot the local repository, or these changes will not propagate to AWS CodeCommit**
+
 1. Set `AWS_DEFAULT_REGION` environment variables to the desired value
-1. Bootstrap all AWS accounts using the new bootstrap style. More information [here](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping):
-    1. Bootstrap deployment account:
+1. Bootstrap all AWS accounts using the new bootstrap style. More information [here](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping)(you can skip *--profile* is you are using ENV variables for providing AWS access credentials). You can deploy this solution in multiple regions or only `us-east-1` bootstrap instead and deploy everything to a single region. Event bridge configuration and support pipelines stack related to AWS Organization and AWS SSO will always be deployed to `us-east-1` region, thus requires a bootstrap in that region.
+
+    1. Bootstrap deployment account (`us-east-1`):
 
         ```sh
-        env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
+        env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
         --profile deployment_profile \
         --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
         aws://111111111111/us-east-1
         ```
 
+    1. If deploying to another region (set in the `AWS_DEFAULT_REGION` variable), bootstrap deployment account for the additional region:
+
+        ```sh
+        env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
+        --profile deployment_profile \
+        --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+        aws://111111111111/$AWS_DEFAULT_REGION
+        ```
+
     1. Bootstrap management account:
 
         ```sh
-        env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
+        env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
         --profile management_profile \
         --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
         --trust 11111111111 \
-        aws://222222222222/us-east-2
+        aws://222222222222/us-east-1
         ```
 
-    1. Bootstrap iam account:
+    1. If deploying to another region (set in the `AWS_DEFAULT_REGION` variable), bootstrap deployment account for the additional region:
+        ```sh
+        env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
+        --profile management_profile \
+        --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+        --trust 11111111111 \
+        aws://222222222222/$AWS_DEFAULT_REGION
+        ```
+
+    1. Bootstrap iam account (can be skipped if using 2 accounts model):
 
         ```sh
 
-        env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
+        env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
         --profile iam_profile \
             --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
         --trust 11111111111 \
-        aws://3333333333333/us-east-2
+        aws://3333333333333/$AWS_DEFAULT_REGION
         ```
 
 1. Setup environment variables for accessing the deployment AWS account.
 1. For an initial deployment, the initial_deployment.py script can be used, which creates a codecommit repository and pushes the code using settings from `cdk.context.json`.
     1. Install requirements from `initial-deploy-requirements.txt`
-    1. Execute `initial_deployment.py`
+    1. Make sure changes to `cdk.context.json` are committed to the local repository.
+    1. Execute `python3 initial_deployment.py`
         1. the `--no-history` flag can be used to not preserve git history if desired.
-1. Once the repository exists and the code is pushed to it, execute `cdk deploy`. For all further changes, the newly created pipeline will be triggered for commits to the `main` branch.
+1. Once the repository exists and the code is pushed to it, execute `cdk deploy EnterpriseAWSSSOPipelineStack`. For all further changes, the newly created pipeline will be triggered for commits to the `main` branch.
+1. Now all the manual deployment steps have been completed. AWS CodePipeline will deploy everything else automatically. You can track the progress from the deployment AWS Account by opening up the AWS Codepipeline console.
 
 ## Usage
 
