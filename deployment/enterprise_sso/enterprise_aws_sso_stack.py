@@ -1,22 +1,21 @@
 from pathlib import Path
+from typing import List, Mapping
 
+from aws_cdk import BundlingOptions, Duration, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as ddb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as event_targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as _lambda
 from aws_cdk import aws_lambda_event_sources as lambda_event_sources
-from aws_cdk import aws_sqs as sqs
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_sub
-from aws_cdk import core
-from typing import List, Mapping
-
-# from aws_cdk import aws_ssm as ssm
+from aws_cdk import aws_sqs as sqs
+from constructs import Construct
 
 
-class EnterpriseAwsSsoExecStack(core.Stack):
-    def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
+class EnterpriseAwsSsoExecStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         context: dict = self.node.try_get_context("enterprise_sso")
@@ -57,6 +56,8 @@ class EnterpriseAwsSsoExecStack(core.Stack):
         assignment_definition_table_sort_key: str = context.get(
             "assignment_definition_table_sort_key", "mappingValue"
         )
+
+        lambda_runtime=_lambda.Runtime.PYTHON_3_10
 
         ## Event bus configuration
         self.ct_event_bus = events.EventBus(
@@ -108,7 +109,7 @@ class EnterpriseAwsSsoExecStack(core.Stack):
             ),
             billing_mode=ddb.BillingMode.PAY_PER_REQUEST,
             encryption=ddb.TableEncryption.AWS_MANAGED,
-            removal_policy=core.RemovalPolicy.DESTROY,
+            removal_policy=RemovalPolicy.DESTROY,
             stream=ddb.StreamViewType.NEW_AND_OLD_IMAGES,
         )
 
@@ -118,8 +119,8 @@ class EnterpriseAwsSsoExecStack(core.Stack):
             "assignment-processing-queue",
             queue_name=assignment_processing_queue_name,
             encryption=sqs.QueueEncryption.KMS_MANAGED,
-            delivery_delay=core.Duration.seconds(sqs_delivery_delay_seconds),
-            visibility_timeout=core.Duration.seconds(sqs_visibility_timeout_seconds),
+            delivery_delay=Duration.seconds(sqs_delivery_delay_seconds),
+            visibility_timeout=Duration.seconds(sqs_visibility_timeout_seconds),
         )
 
         ## Permission management part
@@ -138,7 +139,6 @@ class EnterpriseAwsSsoExecStack(core.Stack):
             ]
         )
 
-
         ## Permission management part
         eventbus_publish_policy = iam.PolicyDocument(
             statements=[
@@ -151,7 +151,6 @@ class EnterpriseAwsSsoExecStack(core.Stack):
                 )
             ]
         )
-
 
         ## Service Event Handler role
         self.service_event_handler_role = self._create_lambda_role(
@@ -194,12 +193,15 @@ class EnterpriseAwsSsoExecStack(core.Stack):
                 "service-role/AWSLambdaBasicExecutionRole",
             ],
         )
-        
+
         ## Assignment definition handler role
         self.assignment_handler_role = self._create_lambda_role(
             role_id="AssignmentDefinitionHandlerRole",
             role_name=sso_management_read_only_role,
-            inline_policies={"sqs-publish-policy": sqs_publish_policy,"dynamodb": dynamodb_publish_policy },
+            inline_policies={
+                "sqs-publish-policy": sqs_publish_policy,
+                "dynamodb": dynamodb_publish_policy,
+            },
             managed_policy_name_list=[
                 "service-role/AWSLambdaBasicExecutionRole",
             ],
@@ -225,8 +227,8 @@ class EnterpriseAwsSsoExecStack(core.Stack):
             "CommonLambdaLayer",
             code=_lambda.Code.from_asset(
                 path=str(Path("src/layers")),
-                bundling=core.BundlingOptions(
-                    image=_lambda.Runtime.PYTHON_3_8.bundling_docker_image,
+                bundling=BundlingOptions(
+                    image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
@@ -234,15 +236,15 @@ class EnterpriseAwsSsoExecStack(core.Stack):
                     ],
                 ),
             ),
-            compatible_runtimes=[_lambda.Runtime.PYTHON_3_8],
+            compatible_runtimes=[lambda_runtime],
         )
         self.org_lambda_layer = _lambda.LayerVersion(
             self,
             "OrganizationsLambdaLayer",
             code=_lambda.Code.from_asset(
                 path=str(Path("src/layers")),
-                bundling=core.BundlingOptions(
-                    image=_lambda.Runtime.PYTHON_3_8.bundling_docker_image,
+                bundling=BundlingOptions(
+                    image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
@@ -250,15 +252,15 @@ class EnterpriseAwsSsoExecStack(core.Stack):
                     ],
                 ),
             ),
-            compatible_runtimes=[_lambda.Runtime.PYTHON_3_8],
+            compatible_runtimes=[lambda_runtime],
         )
         self.sso_lambda_layer = _lambda.LayerVersion(
             self,
             "SsoLambdaLayer",
             code=_lambda.Code.from_asset(
                 path=str(Path("src/layers")),
-                bundling=core.BundlingOptions(
-                    image=_lambda.Runtime.PYTHON_3_8.bundling_docker_image,
+                bundling=BundlingOptions(
+                    image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
@@ -266,14 +268,14 @@ class EnterpriseAwsSsoExecStack(core.Stack):
                     ],
                 ),
             ),
-            compatible_runtimes=[_lambda.Runtime.PYTHON_3_8],
+            compatible_runtimes=[lambda_runtime],
         )
 
-        # This function will process external events and manage DB records. 
+        # This function will process external events and manage DB records.
         self.db_assignment_handler = _lambda.Function(
             self,
             "DBAssignmentHandler",
-            runtime=_lambda.Runtime.PYTHON_3_8,
+            runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
             role=self.db_assignment_handler_role,
@@ -285,12 +287,12 @@ class EnterpriseAwsSsoExecStack(core.Stack):
             ],
             environment={
                 "ERROR_TOPIC_NAME": self.error_notification_topic.topic_arn,
-                "ASSIGNMENTS_TABLE_NAME": self.sso_assignments_table.table_name, 
+                "ASSIGNMENTS_TABLE_NAME": self.sso_assignments_table.table_name,
                 "ASSOCIATIONID_KEY_NAME": assignment_definition_table_partition_key,
                 "ASSOCIATIONID_SORT_KEY_NAME": assignment_definition_table_sort_key,
                 "LOG_LEVEL": "INFO",
                 "POWERTOOLS_SERVICE_NAME": "enterprise-aws-sso",
-            }
+            },
         )
 
         self.db_assignments_lifecycle_events_rule = events.Rule(
@@ -299,9 +301,7 @@ class EnterpriseAwsSsoExecStack(core.Stack):
             description="Forward record creation events",
             enabled=True,
             event_bus=self.ct_event_bus,
-            event_pattern=events.EventPattern(
-                source=["permissionEventSource"]
-            ),
+            event_pattern=events.EventPattern(source=["permissionEventSource"]),
             rule_name=f"Forwarding-to-db-assignment-handler",
             targets=[event_targets.LambdaFunction(self.db_assignment_handler)],
         )
@@ -310,7 +310,7 @@ class EnterpriseAwsSsoExecStack(core.Stack):
         self.service_event_handler = _lambda.Function(
             self,
             "ServiceEventHandler",
-            runtime=_lambda.Runtime.PYTHON_3_8,
+            runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
             role=self.service_event_handler_role,
@@ -325,7 +325,7 @@ class EnterpriseAwsSsoExecStack(core.Stack):
                 "LOG_LEVEL": "INFO",
                 "POWERTOOLS_SERVICE_NAME": "enterprise-aws-sso",
                 "IAM_EVENT_BRIDGE_ARN": self.ct_event_bus.event_bus_arn,
-            }
+            },
         )
 
         self.service_lifecycle_events_rule = events.Rule(
@@ -345,10 +345,10 @@ class EnterpriseAwsSsoExecStack(core.Stack):
         self.assignment_definition_handler = _lambda.Function(
             self,
             "AssignmentDefinitionHandler",
-            runtime=_lambda.Runtime.PYTHON_3_8,
+            runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
-            timeout=core.Duration.seconds(lambda_defenition_handler_timeout_seconds),
+            timeout=Duration.seconds(lambda_defenition_handler_timeout_seconds),
             role=self.assignment_handler_role,
             code=_lambda.Code.from_asset(
                 path=str(Path("src/functions/assignment_definition_handler")),
@@ -370,7 +370,6 @@ class EnterpriseAwsSsoExecStack(core.Stack):
                 "SSO_ADMIN_ROLE_ARN": f"arn:aws:iam::{management_account_id}:role/{sso_management_read_only_role}",
             },
         )
-
 
         self.assignment_defenition_events_rule = events.Rule(
             self,
@@ -406,10 +405,10 @@ class EnterpriseAwsSsoExecStack(core.Stack):
         self.assignment_execution_handler = _lambda.Function(
             self,
             "AssignmentExecutionHandler",
-            runtime=_lambda.Runtime.PYTHON_3_8,
+            runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
-            timeout=core.Duration.seconds(lambda_execution_handler_timeout_seconds),
+            timeout=Duration.seconds(lambda_execution_handler_timeout_seconds),
             role=self.assignment_exec_role,
             code=_lambda.Code.from_asset(
                 path=str(Path("src/functions/assignment_execution_handler")),
@@ -433,7 +432,7 @@ class EnterpriseAwsSsoExecStack(core.Stack):
         )
 
     def _create_lambda_role(
-        scope: core.Construct,
+        scope: Construct,
         role_id: str,
         role_name: str = None,
         managed_policy_name_list: List[str] = None,

@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
-import boto3
-import json
-import logging
-from aws_cdk import core
+import os
+import sys
+
+from aws_cdk import App
 
 from enterprise_sso.enterprise_aws_sso_stack import EnterpriseAwsSsoExecStack
 from enterprise_sso.enterprise_aws_sso_management_stack import (
     EnterpriseAwsSsoManagementStack,
 )
 
-app = core.App()
+app = App()
+
+region = os.environ.get("AWS_DEFAULT_REGION", os.environ.get("AWS_REGION"))
+if not region:
+    print("Please set AWS_DEFAULT_REGION or AWS_REGION")
+    sys.exit(1)
+
+full_deployment = True if region == "us-east-1" else False
 
 
 enterprise_sso = EnterpriseAwsSsoExecStack(app, "AssignmentManagementIAM")
 
-enterprise_sso_management = EnterpriseAwsSsoManagementStack(app, "AssignmentManagementRoot")
+enterprise_sso_management = EnterpriseAwsSsoManagementStack(app, "AssignmentManagementRoot", full_deployment=full_deployment)
 
 app.synth()

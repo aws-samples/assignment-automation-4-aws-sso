@@ -1,9 +1,13 @@
-from aws_cdk import core, aws_iam as iam, aws_events as events, aws_events_targets as targets
+from aws_cdk import Stack
+from aws_cdk import aws_events as events
+from aws_cdk import aws_events_targets as targets
+from aws_cdk import aws_iam as iam
+from constructs import Construct
 
 
-class EnterpriseAwsSsoManagementStack(core.Stack):
+class EnterpriseAwsSsoManagementStack(Stack):
     def __init__(
-        self, scope: core.Construct, construct_id: str, full_deployment: bool, **kwargs
+        self, scope: Construct, construct_id: str, full_deployment: bool, **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
