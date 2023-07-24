@@ -1,7 +1,6 @@
 from aws_cdk import Stack
 from aws_cdk import aws_codebuild as codebuild
 from aws_cdk import aws_codecommit as codecommit
-from aws_cdk import aws_codepipeline as codepipeline
 from aws_cdk.pipelines import CodePipeline, CodePipelineSource, CodeBuildStep
 from constructs import Construct
 from enterprise_sso.enterprise_aws_sso_management_stage import EnterpriseAwsSsoManagementStage
