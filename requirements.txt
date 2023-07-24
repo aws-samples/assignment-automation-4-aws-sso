@@ -4,8 +4,6 @@
 #
 #    pip-compile requirements.in
 #
-astroid==2.15.6
-    # via pylint
 attrs==23.1.0
     # via
     #   cattrs
@@ -20,13 +18,13 @@ aws-cdk-asset-node-proxy-agent-v5==2.0.166
     # via aws-cdk-lib
 aws-cdk-lib==2.88.0
     # via -r requirements.in
-aws-lambda-powertools==2.20.0
+aws-lambda-powertools==2.21.0
     # via -r requirements.in
-boto3==1.28.8
+boto3==1.28.9
     # via
     #   -r requirements.in
     #   aws-assume-role-lib
-botocore==1.31.8
+botocore==1.31.9
     # via
     #   boto3
     #   s3transfer
@@ -36,18 +34,10 @@ constructs==10.2.69
     # via
     #   -r requirements.in
     #   aws-cdk-lib
-dill==0.3.6
-    # via pylint
 exceptiongroup==1.1.2
-    # via
-    #   cattrs
-    #   pytest
+    # via cattrs
 importlib-resources==6.0.0
     # via jsii
-iniconfig==2.0.0
-    # via pytest
-isort==5.12.0
-    # via pylint
 jmespath==1.0.1
     # via
     #   boto3
@@ -59,16 +49,6 @@ jsii==1.85.0
     #   aws-cdk-asset-node-proxy-agent-v5
     #   aws-cdk-lib
     #   constructs
-lazy-object-proxy==1.9.0
-    # via astroid
-mccabe==0.7.0
-    # via pylint
-packaging==23.1
-    # via pytest
-platformdirs==3.9.1
-    # via pylint
-pluggy==1.2.0
-    # via pytest
 publication==0.0.3
     # via
     #   aws-cdk-asset-awscli-v1
@@ -77,12 +57,6 @@ publication==0.0.3
     #   aws-cdk-lib
     #   constructs
     #   jsii
-pylint==2.17.4
-    # via -r requirements.in
-pylint-exit==1.2.0
-    # via -r requirements.in
-pytest==7.4.0
-    # via -r requirements.in
 python-dateutil==2.8.2
     # via
     #   botocore
@@ -91,12 +65,6 @@ s3transfer==0.6.1
     # via boto3
 six==1.16.0
     # via python-dateutil
-tomli==2.0.1
-    # via
-    #   pylint
-    #   pytest
-tomlkit==0.11.8
-    # via pylint
 typeguard==2.13.3
     # via
     #   aws-cdk-asset-awscli-v1
@@ -107,11 +75,8 @@ typeguard==2.13.3
     #   jsii
 typing-extensions==4.7.1
     # via
-    #   astroid
     #   aws-lambda-powertools
     #   cattrs
     #   jsii
 urllib3==1.26.16
     # via botocore
-wrapt==1.15.0
-    # via astroid
