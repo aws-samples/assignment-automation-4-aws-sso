@@ -24,12 +24,12 @@ from config import Config_object
 def account_operations_handler(controller: Config_object, payload: dict):
 
     controller.clients.logger.info("Received event from Service Handler.")
-    action = payload.get("Action")
-    account_id = payload.get("AccountId")
-    tag_key = payload.get("TagKey")
-    tag_value = payload.get("TagValue")
-    parent_ou_name = payload.get("AccountOuName")
-    parent_old_ou_name = payload.get("AccountOldOuName")
+    action: str = payload.get("Action")
+    account_id: str = payload.get("AccountId")
+    tag_key: str = payload.get("TagKey")
+    tag_value: str = payload.get("TagValue")
+    parent_ou_name: str = payload.get("AccountOuName")
+    parent_old_ou_name: str = payload.get("AccountOldOuName")
 
     # Tagging is not support yet as we have no way of detecting tag deletion when resource is untagged from web console.
     # if action == "tagged":
@@ -45,16 +45,17 @@ def account_operations_handler(controller: Config_object, payload: dict):
         controller.clients.logger.info(f"Org action detected. Account is moved")
         query_dynamo_table(
             controller,
-            controller.clients.org.describe_ou_name(parent_old_ou_name),
+            "root" if parent_old_ou_name.startswith("r-") else controller.clients.org.describe_ou_name(parent_old_ou_name),
             account_id,
             controller.data.ACTION_TYPE_DELETE,
         )
-        query_dynamo_table(
-            controller,
-            controller.clients.org.describe_ou_name(parent_ou_name),
-            account_id,
-            controller.data.ACTION_TYPE_CREATE,
-        )
+        if not parent_ou_name.startswith("r-"):
+            query_dynamo_table(
+                controller,
+                controller.clients.org.describe_ou_name(parent_ou_name),
+                account_id,
+                controller.data.ACTION_TYPE_CREATE,
+            )
     return {
         "statusCode": 200,
         "body": json.dumps("Received ControlTower Event has been successfully processed."),

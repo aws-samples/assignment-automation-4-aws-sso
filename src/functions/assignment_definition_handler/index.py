@@ -8,7 +8,10 @@ import json
 from account_operations import account_operations_handler
 from assignments_operations import assignments_operations_handler
 from permissionset_operations import permission_operations_handler
+from aws_lambda_powertools import Logger
 from config import load_config
+
+logger = Logger()
 
 
 controller = None
@@ -40,6 +43,8 @@ controller = None
 # @logger.inject_lambda_context
 def handler(event: dict, context):
     global controller
+
+    logger.debug(event)
 
     if controller is None:
         controller = load_config()
