@@ -16,7 +16,7 @@ from config import Config_object
 #       "TagValue": "",
 #       "AccountId": "",
 #       "AccountOuName": "",
-#       "AccountOldOuName": "If present if not have to look for a solutoin",
+#       "AccountOldOuName": "",
 #     }
 # }
 
@@ -31,18 +31,18 @@ def account_operations_handler(controller: Config_object, payload: dict):
     parent_ou_name: str = payload.get("AccountOuName")
     parent_old_ou_name: str = payload.get("AccountOldOuName")
 
-    # Tagging is not support yet as we have no way of detecting tag deletion when resource is untagged from web console.
+    # Tag deletion is now handled as an untagresource api call when done from the web console. Can now be implemented.
     # if action == "tagged":
     #     if tag_key is not None:
-    #         controller.clients.logger.info(f"Org cation detected. Account is tagged")
+    #         controller.clients.logger.info(f"Org action detected. Account is tagged")
     #         query_dynamo_table(
     #            controller, f"{tag_key}={tag_value}", account_id, controller.data.ACTION_TYPE_CREATE
     #         )
     if action == "created":
-        controller.clients.logger.info(f"Org action detected. Account is created")
+        controller.clients.logger.info(f"Organizatins action detected. Account is created")
         query_dynamo_table(controller, "root", account_id, controller.data.ACTION_TYPE_CREATE)
     if action == "moved":
-        controller.clients.logger.info(f"Org action detected. Account is moved")
+        controller.clients.logger.info(f"Organizations action detected. Account is moved")
         query_dynamo_table(
             controller,
             "root" if parent_old_ou_name.startswith("r-") else controller.clients.org.describe_ou_name(parent_old_ou_name),
@@ -58,7 +58,7 @@ def account_operations_handler(controller: Config_object, payload: dict):
             )
     return {
         "statusCode": 200,
-        "body": json.dumps("Received ControlTower Event has been successfully processed."),
+        "body": json.dumps("Received Organizations Event has been successfully processed."),
     }
 
 
