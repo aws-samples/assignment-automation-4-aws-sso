@@ -22,7 +22,6 @@ from config import Config_object
 
 
 def account_operations_handler(controller: Config_object, payload: dict):
-
     controller.clients.logger.info("Received event from Service Handler.")
     action: str = payload.get("Action")
     account_id: str = payload.get("AccountId")
@@ -45,7 +44,9 @@ def account_operations_handler(controller: Config_object, payload: dict):
         controller.clients.logger.info(f"Organizations action detected. Account is moved")
         query_dynamo_table(
             controller,
-            "root" if parent_old_ou_name.startswith("r-") else controller.clients.org.describe_ou_name(parent_old_ou_name),
+            "root"
+            if parent_old_ou_name.startswith("r-")
+            else controller.clients.org.describe_ou_name(parent_old_ou_name),
             account_id,
             controller.data.ACTION_TYPE_DELETE,
         )
