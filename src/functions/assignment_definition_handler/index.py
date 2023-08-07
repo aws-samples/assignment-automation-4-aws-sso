@@ -16,11 +16,11 @@ logger = Logger()
 
 controller = None
 
-## Event payload from Service Event handler: 
+## Event payload from Service Event handler:
 # {
 #   "Source": "enterprise-aws-sso",
 #   "DetailType": "AccountOperations",
-#   "Detail": 
+#   "Detail":
 #     {
 #       "Action": "tagged|created|moved",
 #       "TagKey": "",
@@ -31,14 +31,15 @@ controller = None
 #     }
 # }
 # {
-#     "PermissionSetOperations": 
+#     "PermissionSetOperations":
 #     {
 #         "Action": "created|delete",
 #         "PermissionSetName": "",
 #     }
 # }
 
-# This will be the control lambda! 
+# This will be the control lambda!
+
 
 # @logger.inject_lambda_context
 def handler(event: dict, context):
@@ -50,16 +51,16 @@ def handler(event: dict, context):
         controller = load_config()
 
     if event_source := event.get("source"):
-        if event_source == "enterprise-aws-sso": 
-                detail_type = event.get("detail-type")
-                if  detail_type == "AccountOperation":
-                        account_operations_handler(controller, event.get("detail"))
-                if detail_type == "PermissionSetOperation":
-                        permission_operations_handler(controller, event.get("detail"))
+        if event_source == "enterprise-aws-sso":
+            detail_type = event.get("detail-type")
+            if detail_type == "AccountOperation":
+                account_operations_handler(controller, event.get("detail"))
+            if detail_type == "PermissionSetOperation":
+                permission_operations_handler(controller, event.get("detail"))
     elif records := event.get("Records"):
-            assignments_operations_handler(controller, records)
+        assignments_operations_handler(controller, records)
 
     return {
         "statusCode": 200,
-        "body": json.dumps(f'Event processed'),
+        "body": json.dumps(f"Event processed"),
     }

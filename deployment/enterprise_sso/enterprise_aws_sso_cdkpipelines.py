@@ -22,16 +22,23 @@ class EnterpriseSSOPipelineStack(Stack):
             self, "enterprisessorepo", codecommit_repository_name
         )
 
-        pipeline = CodePipeline(self, "EnterpriseSSOCDKPipeline",
-                        pipeline_name="EnterpriseSSOCDKPipeline",
-                        synth=CodeBuildStep("Synth",
-                            input=CodePipelineSource.code_commit(codecommit_repository, codecommit_repository_branch_name),
-                            build_environment=codebuild.BuildEnvironment(privileged=True),
-                            commands=["npm install -g aws-cdk",
-                                "python -m pip install -r requirements.txt",
-                                "cdk synth"]
-                        )
-                    )
+        pipeline = CodePipeline(
+            self,
+            "EnterpriseSSOCDKPipeline",
+            pipeline_name="EnterpriseSSOCDKPipeline",
+            synth=CodeBuildStep(
+                "Synth",
+                input=CodePipelineSource.code_commit(
+                    codecommit_repository, codecommit_repository_branch_name
+                ),
+                build_environment=codebuild.BuildEnvironment(privileged=True),
+                commands=[
+                    "npm install -g aws-cdk",
+                    "python -m pip install -r requirements.txt",
+                    "cdk synth",
+                ],
+            ),
+        )
 
         full_deployment = True if self.region == "us-east-1" else False
 

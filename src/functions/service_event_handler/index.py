@@ -54,7 +54,6 @@ def send_event(event_type: str, payload: dict) -> None:
 
 @event_source(data_class=EventBridgeEvent)
 def handler(event: EventBridgeEvent, context):
-
     logger.debug(event.raw_event)
     if event.source not in event_processors.keys():
         logger.error("Event source is not supported")

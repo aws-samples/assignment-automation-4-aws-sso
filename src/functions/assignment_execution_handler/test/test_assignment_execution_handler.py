@@ -44,7 +44,6 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
     """
 
     def test_0_handler_assignment_execution_handler_create_success(self):
-
         self.sso_admin_stubber.add_response(
             "create_account_assignment",
             service_response={
@@ -81,7 +80,6 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
     """
 
     def test_1_handler_assignment_execution_handler_delete_success(self):
-
         index.sso.client = self.sso_admin
 
         self.sso_admin_stubber.add_response(

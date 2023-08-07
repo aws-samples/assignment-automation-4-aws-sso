@@ -57,7 +57,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             "assignment_definition_table_sort_key", "mappingValue"
         )
 
-        lambda_runtime=_lambda.Runtime.PYTHON_3_10
+        lambda_runtime = _lambda.Runtime.PYTHON_3_10
 
         ## Event bus configuration
         self.ct_event_bus = events.EventBus(

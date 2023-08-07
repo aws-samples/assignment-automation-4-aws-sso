@@ -22,11 +22,15 @@ full_deployment = True if region == "us-east-1" else False
 enterprise_sso = EnterpriseAwsSsoExecStack(app, "AssignmentManagementIAM")
 
 enterprise_sso_management = EnterpriseAwsSsoManagementStack(
-    app, "AssignmentManagementRoot", full_deployment=full_deployment)
-
-if region != 'us-east-1':
-    enterprise_sso_management = EnterpriseAwsSsoManagementStack(
-    app, "AssignmentManagementRootUsEast1", full_deployment=full_deployment, env=Environment(region='us-east-1')
+    app, "AssignmentManagementRoot", full_deployment=full_deployment
 )
+
+if region != "us-east-1":
+    enterprise_sso_management = EnterpriseAwsSsoManagementStack(
+        app,
+        "AssignmentManagementRootUsEast1",
+        full_deployment=full_deployment,
+        env=Environment(region="us-east-1"),
+    )
 
 app.synth()

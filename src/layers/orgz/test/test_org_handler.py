@@ -185,7 +185,6 @@ class TestOrgLayer(unittest.TestCase):  # pylint: disable=R0904,C0116
         assert responce[2] == "12345678993"
 
     def test_6_list_parents(self):
-
         self.org_client_stubber.add_response(
             "list_parents",
             {"Parents": [{"Id": "string", "Type": "string"}]},
@@ -195,7 +194,6 @@ class TestOrgLayer(unittest.TestCase):  # pylint: disable=R0904,C0116
         self.organizations.list_parents.return_value = response
 
     def test_7_describe_ou_name(self):
-
         self.org_client_stubber.add_response(
             "describe_organizational_unit",
             {"OrganizationalUnit": {"Arn": "stringstringARN", "Id": "string", "Name": "string"}},
@@ -205,7 +203,6 @@ class TestOrgLayer(unittest.TestCase):  # pylint: disable=R0904,C0116
         self.organizations.describe_ou_name.return_value = response
 
     def test_8_describe_account(self):
-
         self.org_client_stubber.add_response(
             "describe_account",
             {

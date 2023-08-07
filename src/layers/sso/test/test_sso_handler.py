@@ -23,7 +23,6 @@ SSO Layer testing class
 
 
 class TestSsoLayer(unittest.TestCase):
-
     sso_client = botocore.session.get_session().create_client("sso-admin")
     sso_client_stubber = Stubber(sso_client)
 
