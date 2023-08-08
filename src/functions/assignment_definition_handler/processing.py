@@ -16,7 +16,6 @@ def process_mapdata(
     assignment_action: str,
     record: str,
 ):
-
     aws_principal_type: str
     aws_principal_name: str
     aws_principal_type, aws_principal_name = aws_principal.split(":")

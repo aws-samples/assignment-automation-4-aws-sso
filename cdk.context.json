@@ -6,6 +6,7 @@
         "enterprise_sso_management_read_only_role": "assignment-management-read-only-role",
         "enterprise_sso_management_role": "assignment-management-role",
         "target_event_bus_name": "enterprise-aws-sso",
+        "target_event_bus_region": "eu-central-1",
         "assignment_definition_table_partition_key": "mappingId",
         "assignment_definition_table_sort_key": "mappingValue",
         "assignment_processing_queue_delivery_delay_seconds": 30,

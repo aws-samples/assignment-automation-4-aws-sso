@@ -58,7 +58,6 @@ ddb_table = ddb_resource.Table(assignment_table_name)
 
 
 def handler(event, context):
-
     event_source = event.get("source")
     event_detail = event.get("detail")
 

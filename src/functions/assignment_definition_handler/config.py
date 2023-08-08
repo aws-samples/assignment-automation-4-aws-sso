@@ -15,7 +15,6 @@ LAMBDA_FUNC_NAME = "Assignment definition handler"
 
 
 def load_config():
-
     # Following configuration is not use outside this function
     sso_admin_role_arn = os.getenv(
         "SSO_ADMIN_ROLE_ARN",

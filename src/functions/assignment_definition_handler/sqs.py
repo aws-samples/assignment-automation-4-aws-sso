@@ -32,7 +32,7 @@ def publish_sqs_task_for_execution(
         payload.append(entry)
 
         ## TODO refactor to look nice. Unfortunately we can send only in batches of 10.
-        if (idx + 1) / 10 == 0:
+        if (idx + 1) % 10 == 0:
             controller.client.logger.info("Publishing array")
             results.append(
                 controller.clients.sqs.send_message_batch(

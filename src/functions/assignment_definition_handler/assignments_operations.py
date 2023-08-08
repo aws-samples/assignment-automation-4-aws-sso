@@ -12,7 +12,6 @@ import json
 
 
 def assignments_operations_handler(controller: Config_object, records: list):
-
     assignment_action: str
     stream_key: str
     aws_principal: str
