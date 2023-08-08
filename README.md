@@ -1,4 +1,4 @@
-# Enterprise AWS SSO
+# Assignment Automation for AWS Identity Center
 
 ## Architecture Overview
 
@@ -25,10 +25,10 @@ To install provided module following prerequisites needs to be satisfied:
     - *enterprise_sso_deployment_account_id*: AWS Account Id that will have the AWS CodePipeline pipeline deployed to. Can be the same as *enterprise_sso_exec_account_id*
     - *error_notifications_email*: Notification email for error messages
 
-    **Make sure to commit these changes ot the local repository, or these changes will not propagate to AWS CodeCommit**
+    **Make sure to commit these changes ot the local repository, or these changes will not propagate to AWS CodeCommit if using initial_deployment.py**
 
 1. Set `AWS_DEFAULT_REGION` environment variables to the desired value
-1. Bootstrap all AWS accounts using the new bootstrap style. More information [here](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping)(you can skip *--profile* is you are using ENV variables for providing AWS access credentials). You can deploy this solution in multiple regions or only `us-east-1` bootstrap instead and deploy everything to a single region. Event bridge configuration and support pipelines stack related to AWS Organization and AWS SSO will always be deployed to `us-east-1` region, thus requires a bootstrap in that region.
+1. Bootstrap all AWS accounts using the new bootstrap style. More information [here](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping)(you can skip *--profile* is you are using ENV variables for providing AWS access credentials). You can deploy this solution in multiple regions or only `us-east-1` bootstrap instead and deploy everything to a single region. Event bridge configuration and support pipelines stack related to AWS Organization and AWS Identity Center will always be deployed to `us-east-1` region, thus requires a bootstrap in that region.
 
     1. Bootstrap deployment account (`us-east-1`):
 
@@ -91,9 +91,9 @@ To install provided module following prerequisites needs to be satisfied:
 
 This solution is event driven, utilizing a custom AWS EventBridge EventBus in the IAM account (the name of the bus is defined in the `target_event_bus_name` context variable in `cdk.context.json`). The following following events are supported:
 
-### Create/Remove AWS SSO records
+### Create/Remove AWS Identity Center records
 
-In order to manipulate AWS SSO assignments following event structure is used:
+In order to manipulate AWS Identity Center assignments following event structure is used:
 
 ```json
 {
@@ -181,8 +181,8 @@ Examples:
 }
 ```
 
-Events mentioned above will create records in DynamoDB, and trigger corresponding action in AWS SSO.
-DynamoDB acts as a single point of truth, for any following actions. Having such records in DynamoDB will allow automatic assignment/removal of AWS SSO permission when moving accounts between OU as well as creating new accounts in OU.
+Events mentioned above will create records in DynamoDB, and trigger corresponding action in AWS Identity Center.
+DynamoDB acts as a single point of truth, for any following actions. Having such records in DynamoDB will allow automatic assignment/removal of AWS Identity Center permission sets when moving accounts between OU as well as creating new accounts in OU.
 
 ### DB Records example
 
@@ -190,7 +190,7 @@ DynamoDB acts as a single point of truth, for any following actions. Having such
 
 ## Limitations
 
-1. As of current state does not support nested OU's
+1. As of current state does not support nested OU's permission inheritence
 1. Testing is currently limited
 1. Support of ResourceTagged AWS Organization is removed for now due to multiple processing options
 

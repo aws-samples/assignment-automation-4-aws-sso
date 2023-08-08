@@ -1,2 +1,5 @@
 pip-tools
 black
+pylint
+pylint-exit
+pytest
