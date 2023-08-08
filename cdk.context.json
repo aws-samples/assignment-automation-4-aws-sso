@@ -13,7 +13,7 @@
         "assignment_processing_queue_visibility_timeout_seconds": 300,
         "assignment_defenition_handler_timeout_seconds": 300,
         "assignment_execution_handler_timeout_seconds": 300,
-        "error_notifications_email": "ivalevch@amazon.com",
+        "error_notifications_email": "email@example.com",
         "codecommit_repository_name": "enterprise-aws-sso",
         "codecommit_repository_branch_name": "main"
     }
