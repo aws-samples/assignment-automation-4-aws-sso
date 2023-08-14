@@ -195,7 +195,7 @@ class EnterpriseAwsSsoExecStack(Stack):
         )
 
         ## Assignment management role for assignment execution function ##
-        assignment_management_policy = iam.PolicyDocument(
+        assignment_exec_policy = iam.PolicyDocument(
             statements=[
                 iam.PolicyStatement(
                     actions=[
@@ -237,7 +237,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             role_id="AssignmentExecRole",
             role_name=sso_management_role,
             inline_policies={
-                "assignment-policy": assignment_management_policy,
+                "assignment-policy": assignment_exec_policy,
             },
             managed_policy_name_list=[
                 "service-role/AWSLambdaSQSQueueExecutionRole",

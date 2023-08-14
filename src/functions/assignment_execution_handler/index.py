@@ -8,8 +8,9 @@ import boto3
 import os
 import json
 from aws_assume_role_lib import assume_role
-from sso.handler import SsoService
+from botocore import exceptions
 from common.error import Error
+from sso.handler import SsoService
 
 
 class ServerUnavailableException(Exception):
@@ -70,20 +71,24 @@ def handler(event, context):
     # check if delegated admin is enabled
     if use_delegated_admin is None:
         try:
-            response = assumed_admin_role_session.client("organizations").list_delegated_administrators(
-                ServicePrincipal='sso.amazonaws.com',
+            response = assumed_admin_role_session.client(
+                "organizations"
+            ).list_delegated_administrators(
+                ServicePrincipal="sso.amazonaws.com",
             )
-            delegated_admins = response.get('DelegatedAdministrators', [])
+            logger.info(response)
+            delegated_admins = response.get("DelegatedAdministrators", [])
             if delegated_admins:
                 for admin in delegated_admins:
-                    if admin.get('Status') == "ACTIVE":
+                    if admin.get("Status") == "ACTIVE":
                         use_delegated_admin = True
             else:
                 use_delegated_admin = False
-        except Exception as exception:
+        except exceptions.ClientError as exception:
             logger.error("Exception: " + str(exception))
             error_handler.publish_error_message(
-                "Failed to retrieve 'sso.amazonaws.com' delegated administrators.", str(exception))
+                "Failed to retrieve 'sso.amazonaws.com' delegated administrators.", str(exception)
+            )
             raise (exception)
 
     logger.info("use_delegated_admin is set to " + str(use_delegated_admin))
@@ -152,8 +157,7 @@ def handler(event, context):
         else:
             # Not supported action
             logger.info("Not supported action: " + str(message))
-            error_handler.publish_error_message(
-                message, "Not supported action.")
+            error_handler.publish_error_message(message, "Not supported action.")
             raise AttributeError
 
     return {
