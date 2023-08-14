@@ -46,7 +46,7 @@ logger = error_handler.get_logger()
 
 
 # Is Identity Center delegated admin?
-use_delegated_admin = os.getenv("USE_DELEGATED_ADMIN", False)
+use_delegated_admin = None
 
 # Get SSO Instance
 sso_delegated_admin = None
@@ -65,6 +65,28 @@ def handler(event, context):
     # TODO make proper call outside handler work with tests
     global sso_admin
     global sso_delegated_admin
+    global use_delegated_admin
+
+    # check if delegated admin is enabled
+    if use_delegated_admin is None:
+        try:
+            response = assumed_admin_role_session.client("organizations").list_delegated_administrators(
+                ServicePrincipal='sso.amazonaws.com',
+            )
+            delegated_admins = response.get('DelegatedAdministrators', [])
+            if delegated_admins:
+                for admin in delegated_admins:
+                    if admin.get('Status') == "ACTIVE":
+                        use_delegated_admin = True
+            else:
+                use_delegated_admin = False
+        except Exception as exception:
+            logger.error("Exception: " + str(exception))
+            error_handler.publish_error_message(
+                "Failed to retrieve 'sso.amazonaws.com' delegated administrators.", str(exception))
+            raise (exception)
+
+    logger.info("use_delegated_admin is set to " + str(use_delegated_admin))
 
     for record in event["Records"]:
         message = record["body"]

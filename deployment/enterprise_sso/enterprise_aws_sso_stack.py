@@ -23,7 +23,6 @@ class EnterpriseAwsSsoExecStack(Stack):
         management_account_id: str = context.get("enterprise_sso_management_account_id")
         sso_exec_account_id: str = context.get("enterprise_sso_exec_account_id")
         deployment_account_id: str = context.get("enterprise_sso_deployment_account_id")
-        use_delegated_admin: bool = context.get("enterprise_sso_use_delegated_admin")
         error_notification_email: str = context.get("error_notifications_email")
         sso_management_read_only_role: str = context.get(
             "enterprise_sso_management_read_only_role",
@@ -209,35 +208,10 @@ class EnterpriseAwsSsoExecStack(Stack):
                     resources=["*"],
                 ),
                 iam.PolicyStatement(
-                    sid="IAMListPermissions",
-                    actions=["iam:ListRoles", "iam:ListPolicies"],
+                    sid="AllowPublishingToSns",
+                    actions=["sns:Publish"],
                     effect=iam.Effect.ALLOW,
                     resources=["*"],
-                ),
-                iam.PolicyStatement(
-                    sid="AccessToSSOProvisionedRoles",
-                    actions=[
-                        "iam:AttachRolePolicy",
-                        "iam:CreateRole",
-                        "iam:DeleteRole",
-                        "iam:DeleteRolePolicy",
-                        "iam:DetachRolePolicy",
-                        "iam:GetRole",
-                        "iam:ListAttachedRolePolicies",
-                        "iam:ListRolePolicies",
-                        "iam:PutRolePolicy",
-                        "iam:UpdateRole",
-                        "iam:UpdateRoleDescription",
-                    ],
-                    effect=iam.Effect.ALLOW,
-                    resources=[
-                        "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*"],
-                ),
-                iam.PolicyStatement(
-                    actions=["iam:GetSAMLProvider"],
-                    effect=iam.Effect.ALLOW,
-                    resources=[
-                        "arn:aws:iam::*:saml-provider/AWSSSO_*_DO_NOT_DELETE"],
                 ),
             ]
         )
@@ -475,7 +449,6 @@ class EnterpriseAwsSsoExecStack(Stack):
                 "ASSOCIATIONID_CONCAT_CHAR": "|",
                 "SSO_ADMIN_ROLE_ARN": f"arn:aws:iam::{management_account_id}:role/{sso_management_role}",
                 "MANAGEMENT_ACCOUNT_ID": management_account_id,
-                "USE_DELEGATED_ADMIN": use_delegated_admin,
             },
         )
 

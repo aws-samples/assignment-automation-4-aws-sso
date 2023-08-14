@@ -82,6 +82,14 @@ class EnterpriseAwsSsoManagementStack(Stack):
                         resources=["*"],
                     ),
                     iam.PolicyStatement(
+                        sid="ListDelegatedAdministrators",
+                        actions=[
+                            "organizations:ListDelegatedAdministrators",
+                        ],
+                        effect=iam.Effect.ALLOW,
+                        resources=["*"],
+                    ),
+                    iam.PolicyStatement(
                         sid="IAMListPermissions",
                         actions=["iam:ListRoles", "iam:ListPolicies"],
                         effect=iam.Effect.ALLOW,
