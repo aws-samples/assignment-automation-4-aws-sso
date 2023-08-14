@@ -23,6 +23,7 @@ class EnterpriseAwsSsoExecStack(Stack):
         management_account_id: str = context.get("enterprise_sso_management_account_id")
         sso_exec_account_id: str = context.get("enterprise_sso_exec_account_id")
         deployment_account_id: str = context.get("enterprise_sso_deployment_account_id")
+        use_delegated_admin: bool = context.get("enterprise_sso_use_delegated_admin")
         error_notification_email: str = context.get("error_notifications_email")
         sso_management_read_only_role: str = context.get(
             "enterprise_sso_management_read_only_role",
@@ -194,6 +195,53 @@ class EnterpriseAwsSsoExecStack(Stack):
             ],
         )
 
+        ## Assignment management role for assignment execution function ##
+        assignment_management_policy = iam.PolicyDocument(
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "sso:CreateAccountAssignment",
+                        "sso:ListPermissionSetsProvisionedToAccount",
+                        "sso:ListInstances",
+                        "sso:DeleteAccountAssignment",
+                    ],
+                    effect=iam.Effect.ALLOW,
+                    resources=["*"],
+                ),
+                iam.PolicyStatement(
+                    sid="IAMListPermissions",
+                    actions=["iam:ListRoles", "iam:ListPolicies"],
+                    effect=iam.Effect.ALLOW,
+                    resources=["*"],
+                ),
+                iam.PolicyStatement(
+                    sid="AccessToSSOProvisionedRoles",
+                    actions=[
+                        "iam:AttachRolePolicy",
+                        "iam:CreateRole",
+                        "iam:DeleteRole",
+                        "iam:DeleteRolePolicy",
+                        "iam:DetachRolePolicy",
+                        "iam:GetRole",
+                        "iam:ListAttachedRolePolicies",
+                        "iam:ListRolePolicies",
+                        "iam:PutRolePolicy",
+                        "iam:UpdateRole",
+                        "iam:UpdateRoleDescription",
+                    ],
+                    effect=iam.Effect.ALLOW,
+                    resources=[
+                        "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*"],
+                ),
+                iam.PolicyStatement(
+                    actions=["iam:GetSAMLProvider"],
+                    effect=iam.Effect.ALLOW,
+                    resources=[
+                        "arn:aws:iam::*:saml-provider/AWSSSO_*_DO_NOT_DELETE"],
+                ),
+            ]
+        )
+
         ## Assignment definition handler role
         self.assignment_handler_role = self._create_lambda_role(
             role_id="AssignmentDefinitionHandlerRole",
@@ -214,6 +262,9 @@ class EnterpriseAwsSsoExecStack(Stack):
         self.assignment_exec_role = self._create_lambda_role(
             role_id="AssignmentExecRole",
             role_name=sso_management_role,
+            inline_policies={
+                "assignment-policy": assignment_management_policy,
+            },
             managed_policy_name_list=[
                 "service-role/AWSLambdaSQSQueueExecutionRole",
             ],
@@ -401,7 +452,7 @@ class EnterpriseAwsSsoExecStack(Stack):
         )  # TODO: not sure if needed
         self.sso_assignments_table.grant_stream_read(self.assignment_definition_handler)
 
-        # This function will execute the assignments prepaired by defenition lambda
+        # This function will execute the assignments prepared by defenition lambda
         self.assignment_execution_handler = _lambda.Function(
             self,
             "AssignmentExecutionHandler",
@@ -423,6 +474,8 @@ class EnterpriseAwsSsoExecStack(Stack):
                 "POWERTOOLS_SERVICE_NAME": "enterprise-sso",
                 "ASSOCIATIONID_CONCAT_CHAR": "|",
                 "SSO_ADMIN_ROLE_ARN": f"arn:aws:iam::{management_account_id}:role/{sso_management_role}",
+                "MANAGEMENT_ACCOUNT_ID": management_account_id,
+                "USE_DELEGATED_ADMIN": use_delegated_admin,
             },
         )
 
