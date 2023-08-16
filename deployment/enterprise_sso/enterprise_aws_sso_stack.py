@@ -194,6 +194,28 @@ class EnterpriseAwsSsoExecStack(Stack):
             ],
         )
 
+        ## Assignment management role for assignment execution function ##
+        assignment_exec_policy = iam.PolicyDocument(
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "sso:CreateAccountAssignment",
+                        "sso:ListPermissionSetsProvisionedToAccount",
+                        "sso:ListInstances",
+                        "sso:DeleteAccountAssignment",
+                    ],
+                    effect=iam.Effect.ALLOW,
+                    resources=["*"],
+                ),
+                iam.PolicyStatement(
+                    sid="AllowPublishingToSns",
+                    actions=["sns:Publish"],
+                    effect=iam.Effect.ALLOW,
+                    resources=[self.error_notification_topic.topic_arn],
+                ),
+            ]
+        )
+
         ## Assignment definition handler role
         self.assignment_handler_role = self._create_lambda_role(
             role_id="AssignmentDefinitionHandlerRole",
@@ -214,6 +236,9 @@ class EnterpriseAwsSsoExecStack(Stack):
         self.assignment_exec_role = self._create_lambda_role(
             role_id="AssignmentExecRole",
             role_name=sso_management_role,
+            inline_policies={
+                "assignment-policy": assignment_exec_policy,
+            },
             managed_policy_name_list=[
                 "service-role/AWSLambdaSQSQueueExecutionRole",
             ],
@@ -401,7 +426,7 @@ class EnterpriseAwsSsoExecStack(Stack):
         )  # TODO: not sure if needed
         self.sso_assignments_table.grant_stream_read(self.assignment_definition_handler)
 
-        # This function will execute the assignments prepaired by defenition lambda
+        # This function will execute the assignments prepared by defenition lambda
         self.assignment_execution_handler = _lambda.Function(
             self,
             "AssignmentExecutionHandler",
@@ -423,6 +448,7 @@ class EnterpriseAwsSsoExecStack(Stack):
                 "POWERTOOLS_SERVICE_NAME": "enterprise-sso",
                 "ASSOCIATIONID_CONCAT_CHAR": "|",
                 "SSO_ADMIN_ROLE_ARN": f"arn:aws:iam::{management_account_id}:role/{sso_management_role}",
+                "MANAGEMENT_ACCOUNT_ID": management_account_id,
             },
         )
 
