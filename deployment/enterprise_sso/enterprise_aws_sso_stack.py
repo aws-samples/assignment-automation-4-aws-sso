@@ -211,7 +211,7 @@ class EnterpriseAwsSsoExecStack(Stack):
                     sid="AllowPublishingToSns",
                     actions=["sns:Publish"],
                     effect=iam.Effect.ALLOW,
-                    resources=["*"],
+                    resources=[self.error_notification_topic.topic_arn],
                 ),
             ]
         )
