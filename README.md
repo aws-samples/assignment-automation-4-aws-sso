@@ -59,6 +59,7 @@ To install provided module following prerequisites needs to be satisfied:
         ```
 
     1. If deploying to another region (set in the `AWS_DEFAULT_REGION` variable), bootstrap deployment account for the additional region:
+
         ```sh
         env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
         --profile management_profile \
@@ -88,6 +89,12 @@ To install provided module following prerequisites needs to be satisfied:
 1. Now all the manual deployment steps have been completed. AWS CodePipeline will deploy everything else automatically. You can track the progress from the deployment AWS Account by opening up the AWS Codepipeline console.
 
 ## Usage
+
+### Delegated Administrator
+
+If the solution is deployed to an AWS Account that is registered as a delegated administrator for AWS Identity Center, then it will attempt to leverage it and manage the permission sets from the delegated administrator account. For those permissions that are assigned to the management account, the solution will assume a role into the management account and execute permission assignment there.
+
+Since permissions sets that are assigned to the management account can only be then managed by the management account (see [here](https://docs.aws.amazon.com/singlesignon/latest/userguide/delegated-admin.html#delegated-admin-tasks-member-account) for details), take care in using root assignments, since after the permission set gets assigned to the management account, it is no longer manageable from the delegated administrator account.
 
 This solution is event driven, utilizing a custom AWS EventBridge EventBus in the IAM account (the name of the bus is defined in the `target_event_bus_name` context variable in `cdk.context.json`). The following following events are supported:
 
