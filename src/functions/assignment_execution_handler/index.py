@@ -117,7 +117,7 @@ def handler(event, context):
         if action == ACTION_TYPE_CREATE:
 
             @backoff.on_exception(
-                backoff.expo,
+                backoff.full_jitter,
                 (
                     sso.client.exceptions.ConflictException,
                     sso.client.exceptions.ThrottlingException,
@@ -152,7 +152,7 @@ def handler(event, context):
         elif action == ACTION_TYPE_DELETE:
 
             @backoff.on_exception(
-                backoff.expo,
+                backoff.full_jitter,
                 (
                     sso.client.exceptions.ConflictException,
                     sso.client.exceptions.ThrottlingException,
