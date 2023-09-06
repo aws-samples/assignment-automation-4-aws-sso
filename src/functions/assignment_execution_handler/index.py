@@ -4,6 +4,7 @@
 ################################################################################
 
 
+import backoff
 import boto3
 import os
 import json
@@ -114,8 +115,18 @@ def handler(event, context):
             sso = sso_delegated_admin
 
         if action == ACTION_TYPE_CREATE:
-            # Create Account/PermissionSet Assignment
-            try:
+
+            @backoff.on_exception(
+                backoff.expo,
+                (
+                    sso.client.exceptions.ConflictException,
+                    sso.client.exceptions.ThrottlingException,
+                ),
+                max_tries=10,
+            )
+            def create_account_assignment(
+                message, principal_type, principal_id, permission_set_arn, target_id, sso
+            ):
                 response = sso.client.create_account_assignment(
                     InstanceArn=sso.instance_arn,
                     TargetId=target_id,
@@ -125,9 +136,12 @@ def handler(event, context):
                     PrincipalId=principal_id,
                 )
                 logger.info(response)
-                # TODO - According to AccountAssignmentCreationStatus, Status can be 'IN_PROGRESS'|'FAILED'|'SUCCEEDED'
-                # If Status is FAILED, What kind of Action is needed?
 
+            # Create Account/PermissionSet Assignment
+            try:
+                create_account_assignment(
+                    message, principal_type, principal_id, permission_set_arn, target_id, sso
+                )
             except Exception as exception:
                 # If Exception occurs, parse Response and write it to Error Topic.
                 # Then, raise exception to not delete the message from queue.
@@ -136,8 +150,18 @@ def handler(event, context):
                 raise (exception)
 
         elif action == ACTION_TYPE_DELETE:
-            # Delete Account/PermissionSet Assignment
-            try:
+
+            @backoff.on_exception(
+                backoff.expo,
+                (
+                    sso.client.exceptions.ConflictException,
+                    sso.client.exceptions.ThrottlingException,
+                ),
+                max_tries=10,
+            )
+            def delete_account_assignment(
+                principal_type, principal_id, permission_set_arn, target_id, sso
+            ):
                 response = sso.client.delete_account_assignment(
                     InstanceArn=sso.instance_arn,
                     TargetId=target_id,
@@ -147,6 +171,12 @@ def handler(event, context):
                     PrincipalId=principal_id,
                 )
                 logger.info(response)
+
+            # Delete Account/PermissionSet Assignment
+            try:
+                delete_account_assignment(
+                    principal_type, principal_id, permission_set_arn, target_id, sso
+                )
             except Exception as exception:
                 # If Exception occurs, parse Response and write it to Error Topic.
                 # Then, raise exception to not delete the message from queue.
