@@ -26,8 +26,8 @@ PERMISSION_FOR_OU = "OrganizationalUnit"
 PERMISSION_FOR_ACCOUNT = "Account"
 PERMISSION_FOR_TAG = "Tag"
 PERMISSION_FOR_ROOT = "Root"
-PERMISSON_ACTION_ADD = "Add"
-PERMISSON_ACTION_REMOVE = "Remove"
+PERMISSION_ACTION_ADD = "Add"
+PERMISSION_ACTION_REMOVE = "Remove"
 
 session = boto3.Session()
 event_bridge_client = session.client("events")
@@ -63,7 +63,6 @@ def handler(event, context):
 
     if event_source == EVENT_SOURCE:
         permissions = event_detail.get("permissions")
-        mapping_records = []
         target_principle = None
         user_principle = None
 
@@ -105,14 +104,14 @@ def handler(event, context):
             permission_set_name = permission_info["PermissionSetName"]
             mapping_value = f"{mapping_value_prefix}|{user_principle}|{permission_set_name}"
 
-            if action_type == PERMISSON_ACTION_REMOVE:
+            if action_type == PERMISSION_ACTION_REMOVE:
                 ddb_table.delete_item(
                     Key={
                         map_key_name: str(target_principle),
                         map_sortkey_name: mapping_value,
                     }
                 )
-            elif action_type == PERMISSON_ACTION_ADD:
+            elif action_type == PERMISSION_ACTION_ADD:
                 ddb_table.put_item(
                     Item={
                         map_key_name: str(target_principle),
