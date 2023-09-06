@@ -303,6 +303,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
+            reserved_concurrent_executions=2,
             role=self.db_assignment_handler_role,
             code=_lambda.Code.from_asset(
                 path=str(Path("src/functions/assignment_db_handler")),
@@ -338,6 +339,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
+            reserved_concurrent_executions=2,
             role=self.service_event_handler_role,
             code=_lambda.Code.from_asset(
                 path=str(Path("src/functions/service_event_handler")),
@@ -373,6 +375,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
+            reserved_concurrent_executions=2,
             timeout=Duration.seconds(lambda_defenition_handler_timeout_seconds),
             role=self.assignment_handler_role,
             code=_lambda.Code.from_asset(
@@ -433,6 +436,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             runtime=lambda_runtime,
             handler="index.handler",
             memory_size=256,
+            reserved_concurrent_executions=2,
             timeout=Duration.seconds(lambda_execution_handler_timeout_seconds),
             role=self.assignment_exec_role,
             code=_lambda.Code.from_asset(
