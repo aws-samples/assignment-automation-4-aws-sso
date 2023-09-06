@@ -15,7 +15,7 @@ git-remote-codecommit==1.16
     # via -r initial-deploy-requirements.in
 gitdb==4.0.10
     # via gitpython
-gitpython==3.1.32
+gitpython==3.1.34
     # via -r initial-deploy-requirements.in
 jmespath==1.0.1
     # via
