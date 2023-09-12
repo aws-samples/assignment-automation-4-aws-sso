@@ -1,7 +1,12 @@
+import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import List, Mapping
 
-from aws_cdk import BundlingOptions, Duration, RemovalPolicy, Stack
+import jsii
+from aws_cdk import BundlingOptions, Duration, ILocalBundling, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as ddb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as event_targets
@@ -12,13 +17,6 @@ from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_sub
 from aws_cdk import aws_sqs as sqs
 from constructs import Construct
-
-import subprocess
-import sys
-import os
-import shutil
-from aws_cdk import ILocalBundling
-import jsii
 
 
 class EnterpriseAwsSsoExecStack(Stack):
@@ -487,7 +485,6 @@ class LocalBundler:
             subprocess.check_call([sys.executable, "-m", "pip", "--version"])
         except:
             return False
-
 
         python_output_dir = str(Path(output_dir, "python"))
         subprocess.check_call(
