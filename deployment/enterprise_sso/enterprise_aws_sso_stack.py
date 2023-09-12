@@ -13,6 +13,13 @@ from aws_cdk import aws_sns_subscriptions as sns_sub
 from aws_cdk import aws_sqs as sqs
 from constructs import Construct
 
+import subprocess
+import sys
+import os
+import shutil
+from aws_cdk import ILocalBundling
+import jsii
+
 
 class EnterpriseAwsSsoExecStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -194,28 +201,6 @@ class EnterpriseAwsSsoExecStack(Stack):
             ],
         )
 
-        ## Assignment management role for assignment execution function ##
-        assignment_exec_policy = iam.PolicyDocument(
-            statements=[
-                iam.PolicyStatement(
-                    actions=[
-                        "sso:CreateAccountAssignment",
-                        "sso:ListPermissionSetsProvisionedToAccount",
-                        "sso:ListInstances",
-                        "sso:DeleteAccountAssignment",
-                    ],
-                    effect=iam.Effect.ALLOW,
-                    resources=["*"],
-                ),
-                iam.PolicyStatement(
-                    sid="AllowPublishingToSns",
-                    actions=["sns:Publish"],
-                    effect=iam.Effect.ALLOW,
-                    resources=[self.error_notification_topic.topic_arn],
-                ),
-            ]
-        )
-
         ## Assignment definition handler role
         self.assignment_handler_role = self._create_lambda_role(
             role_id="AssignmentDefinitionHandlerRole",
@@ -236,9 +221,6 @@ class EnterpriseAwsSsoExecStack(Stack):
         self.assignment_exec_role = self._create_lambda_role(
             role_id="AssignmentExecRole",
             role_name=sso_management_role,
-            inline_policies={
-                "assignment-policy": assignment_exec_policy,
-            },
             managed_policy_name_list=[
                 "service-role/AWSLambdaSQSQueueExecutionRole",
             ],
@@ -247,49 +229,57 @@ class EnterpriseAwsSsoExecStack(Stack):
             ],
         )
 
+        common_layer_path = Path("src/layers/common")
         self.common_lambda_layer = _lambda.LayerVersion(
             self,
             "CommonLambdaLayer",
             code=_lambda.Code.from_asset(
-                path=str(Path("src/layers")),
+                path=str(common_layer_path),
                 bundling=BundlingOptions(
+                    local=LocalBundler(str(common_layer_path)),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au common /asset-output/python""",
+                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
                     ],
                 ),
             ),
             compatible_runtimes=[lambda_runtime],
         )
+
+        orgz_layer_path = Path("src/layers/orgz")
         self.org_lambda_layer = _lambda.LayerVersion(
             self,
             "OrganizationsLambdaLayer",
             code=_lambda.Code.from_asset(
-                path=str(Path("src/layers")),
+                path=str(orgz_layer_path),
                 bundling=BundlingOptions(
+                    local=LocalBundler(str(orgz_layer_path)),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au orgz /asset-output/python""",
+                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
                     ],
                 ),
             ),
             compatible_runtimes=[lambda_runtime],
         )
+
+        sso_layer_path = Path("src/layers/sso")
         self.sso_lambda_layer = _lambda.LayerVersion(
             self,
             "SsoLambdaLayer",
             code=_lambda.Code.from_asset(
-                path=str(Path("src/layers")),
+                path=str(sso_layer_path),
                 bundling=BundlingOptions(
+                    local=LocalBundler(str(sso_layer_path)),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au sso /asset-output/python""",
+                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
                     ],
                 ),
             ),
@@ -426,7 +416,7 @@ class EnterpriseAwsSsoExecStack(Stack):
         )  # TODO: not sure if needed
         self.sso_assignments_table.grant_stream_read(self.assignment_definition_handler)
 
-        # This function will execute the assignments prepared by defenition lambda
+        # This function will execute the assignments prepaired by defenition lambda
         self.assignment_execution_handler = _lambda.Function(
             self,
             "AssignmentExecutionHandler",
@@ -448,7 +438,6 @@ class EnterpriseAwsSsoExecStack(Stack):
                 "POWERTOOLS_SERVICE_NAME": "enterprise-sso",
                 "ASSOCIATIONID_CONCAT_CHAR": "|",
                 "SSO_ADMIN_ROLE_ARN": f"arn:aws:iam::{management_account_id}:role/{sso_management_role}",
-                "MANAGEMENT_ACCOUNT_ID": management_account_id,
             },
         )
 
@@ -484,3 +473,46 @@ class EnterpriseAwsSsoExecStack(Stack):
             )
             lambda_role.add_to_principal_policy(sts_policy)
         return lambda_role
+
+
+@jsii.implements(ILocalBundling)
+class LocalBundler:
+    """This allows packaging lambda functions without the use of Docker"""
+
+    def __init__(self, source_root):
+        self.source_root = source_root
+
+    def try_bundle(self, output_dir: str, options: BundlingOptions) -> bool:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "--version"])
+        except:
+            return False
+
+
+        python_output_dir = str(Path(output_dir, "python"))
+        subprocess.check_call(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "--no-cache-dir",
+                "install",
+                "-r",
+                str(Path(self.source_root, "requirements.txt")),
+                "-t",
+                python_output_dir,
+            ]
+        )
+
+        def copytree(src: str, dst: str, symlinks=False, ignore=None):
+            for item in os.listdir(src):
+                source_item = os.path.join(src, item)
+                destination_item = os.path.join(dst, item)
+                if os.path.isdir(source_item):
+                    shutil.copytree(source_item, destination_item, symlinks, ignore)
+                else:
+                    shutil.copy2(source_item, destination_item)
+
+        copytree(self.source_root, python_output_dir)
+
+        return True
