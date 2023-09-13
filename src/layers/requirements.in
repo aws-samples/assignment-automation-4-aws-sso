@@ -1,3 +1,4 @@
+backoff
 boto3
 botocore
 aws-assume-role-lib
