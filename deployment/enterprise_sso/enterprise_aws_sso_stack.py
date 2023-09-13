@@ -470,7 +470,9 @@ class EnterpriseAwsSsoExecStack(Stack):
 
         # setting the assignments queue as the event source for the execution lambda
         self.assignment_execution_handler.add_event_source(
-            lambda_event_sources.SqsEventSource(self.assignment_processing_queue, batch_size=10)
+            lambda_event_sources.SqsEventSource(
+                self.assignment_processing_queue, batch_size=10, max_concurrency=2
+            )
         )
 
     def _create_lambda_role(
