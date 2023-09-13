@@ -252,7 +252,12 @@ class EnterpriseAwsSsoExecStack(Stack):
             ],
         )
 
+        # Lambda Layer Paths
         common_layer_path = Path("src/layers/common")
+        orgz_layer_path = Path("src/layers/orgz")
+        sso_layer_path = Path("src/layers/sso")
+
+        # Lambda Layers
         self.common_lambda_layer = _lambda.LayerVersion(
             self,
             "CommonLambdaLayer",
@@ -271,7 +276,6 @@ class EnterpriseAwsSsoExecStack(Stack):
             compatible_runtimes=[lambda_runtime],
         )
 
-        orgz_layer_path = Path("src/layers/orgz")
         self.org_lambda_layer = _lambda.LayerVersion(
             self,
             "OrganizationsLambdaLayer",
@@ -290,7 +294,6 @@ class EnterpriseAwsSsoExecStack(Stack):
             compatible_runtimes=[lambda_runtime],
         )
 
-        sso_layer_path = Path("src/layers/sso")
         self.sso_lambda_layer = _lambda.LayerVersion(
             self,
             "SsoLambdaLayer",
