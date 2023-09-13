@@ -1,7 +1,12 @@
+import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import List, Mapping
 
-from aws_cdk import BundlingOptions, Duration, RemovalPolicy, Stack
+import jsii
+from aws_cdk import BundlingOptions, Duration, ILocalBundling, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as ddb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as event_targets
@@ -247,49 +252,60 @@ class EnterpriseAwsSsoExecStack(Stack):
             ],
         )
 
+        # Lambda Layer Paths
+        common_layer_path = Path("src/layers/common")
+        orgz_layer_path = Path("src/layers/orgz")
+        sso_layer_path = Path("src/layers/sso")
+
+        # Lambda Layers
         self.common_lambda_layer = _lambda.LayerVersion(
             self,
             "CommonLambdaLayer",
             code=_lambda.Code.from_asset(
-                path=str(Path("src/layers")),
+                path=str(common_layer_path),
                 bundling=BundlingOptions(
+                    local=LocalBundler(str(common_layer_path)),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au common /asset-output/python""",
+                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
                     ],
                 ),
             ),
             compatible_runtimes=[lambda_runtime],
         )
+
         self.org_lambda_layer = _lambda.LayerVersion(
             self,
             "OrganizationsLambdaLayer",
             code=_lambda.Code.from_asset(
-                path=str(Path("src/layers")),
+                path=str(orgz_layer_path),
                 bundling=BundlingOptions(
+                    local=LocalBundler(str(orgz_layer_path)),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au orgz /asset-output/python""",
+                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
                     ],
                 ),
             ),
             compatible_runtimes=[lambda_runtime],
         )
+
         self.sso_lambda_layer = _lambda.LayerVersion(
             self,
             "SsoLambdaLayer",
             code=_lambda.Code.from_asset(
-                path=str(Path("src/layers")),
+                path=str(sso_layer_path),
                 bundling=BundlingOptions(
+                    local=LocalBundler(str(sso_layer_path)),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au sso /asset-output/python""",
+                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
                     ],
                 ),
             ),
@@ -486,3 +502,45 @@ class EnterpriseAwsSsoExecStack(Stack):
             )
             lambda_role.add_to_principal_policy(sts_policy)
         return lambda_role
+
+
+@jsii.implements(ILocalBundling)
+class LocalBundler:
+    """This allows packaging lambda functions without the use of Docker"""
+
+    def __init__(self, source_root):
+        self.source_root = source_root
+
+    def try_bundle(self, output_dir: str, options: BundlingOptions) -> bool:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "--version"])
+        except:
+            return False
+
+        python_output_dir = str(Path(output_dir, "python"))
+        subprocess.check_call(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "--no-cache-dir",
+                "install",
+                "-r",
+                str(Path(self.source_root, "requirements.txt")),
+                "-t",
+                python_output_dir,
+            ]
+        )
+
+        def copytree(src: str, dst: str, symlinks=False, ignore=None):
+            for item in os.listdir(src):
+                source_item = os.path.join(src, item)
+                destination_item = os.path.join(dst, item)
+                if os.path.isdir(source_item):
+                    shutil.copytree(source_item, destination_item, symlinks, ignore)
+                else:
+                    shutil.copy2(source_item, destination_item)
+
+        copytree(self.source_root, python_output_dir)
+
+        return True
