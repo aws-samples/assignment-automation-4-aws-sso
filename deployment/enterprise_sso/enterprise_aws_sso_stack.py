@@ -264,7 +264,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             code=_lambda.Code.from_asset(
                 path=str(common_layer_path),
                 bundling=BundlingOptions(
-                    local=LocalBundler(str(common_layer_path)),
+                    local=LocalBundler(str(common_layer_path), "common"),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
@@ -282,7 +282,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             code=_lambda.Code.from_asset(
                 path=str(orgz_layer_path),
                 bundling=BundlingOptions(
-                    local=LocalBundler(str(orgz_layer_path)),
+                    local=LocalBundler(str(orgz_layer_path), "orgz"),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
@@ -300,7 +300,7 @@ class EnterpriseAwsSsoExecStack(Stack):
             code=_lambda.Code.from_asset(
                 path=str(sso_layer_path),
                 bundling=BundlingOptions(
-                    local=LocalBundler(str(sso_layer_path)),
+                    local=LocalBundler(str(sso_layer_path), "sso"),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
@@ -508,8 +508,9 @@ class EnterpriseAwsSsoExecStack(Stack):
 class LocalBundler:
     """This allows packaging lambda functions without the use of Docker"""
 
-    def __init__(self, source_root):
+    def __init__(self, source_root, module_path):
         self.source_root = source_root
+        self.module_path = module_path
 
     def try_bundle(self, output_dir: str, options: BundlingOptions) -> bool:
         try:
@@ -533,6 +534,7 @@ class LocalBundler:
         )
 
         def copytree(src: str, dst: str, symlinks=False, ignore=None):
+            os.mkdir(dst)
             for item in os.listdir(src):
                 source_item = os.path.join(src, item)
                 destination_item = os.path.join(dst, item)
@@ -541,6 +543,6 @@ class LocalBundler:
                 else:
                     shutil.copy2(source_item, destination_item)
 
-        copytree(self.source_root, python_output_dir)
+        copytree(self.source_root, str(Path(python_output_dir, self.module_path)))
 
         return True
