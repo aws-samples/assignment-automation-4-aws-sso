@@ -264,12 +264,12 @@ class EnterpriseAwsSsoExecStack(Stack):
             code=_lambda.Code.from_asset(
                 path=str(common_layer_path),
                 bundling=BundlingOptions(
-                    local=LocalBundler(str(common_layer_path)),
+                    local=LocalBundler(common_layer_path),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
+                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{common_layer_path.name}/",
                     ],
                 ),
             ),
@@ -282,12 +282,12 @@ class EnterpriseAwsSsoExecStack(Stack):
             code=_lambda.Code.from_asset(
                 path=str(orgz_layer_path),
                 bundling=BundlingOptions(
-                    local=LocalBundler(str(orgz_layer_path)),
+                    local=LocalBundler(orgz_layer_path),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
+                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{orgz_layer_path.name}/",
                     ],
                 ),
             ),
@@ -300,12 +300,12 @@ class EnterpriseAwsSsoExecStack(Stack):
             code=_lambda.Code.from_asset(
                 path=str(sso_layer_path),
                 bundling=BundlingOptions(
-                    local=LocalBundler(str(sso_layer_path)),
+                    local=LocalBundler(sso_layer_path),
                     image=lambda_runtime.bundling_image,
                     command=[
                         "bash",
                         "-c",
-                        """pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python""",
+                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{sso_layer_path.name}/",
                     ],
                 ),
             ),
@@ -508,7 +508,7 @@ class EnterpriseAwsSsoExecStack(Stack):
 class LocalBundler:
     """This allows packaging lambda functions without the use of Docker"""
 
-    def __init__(self, source_root):
+    def __init__(self, source_root: Path):
         self.source_root = source_root
 
     def try_bundle(self, output_dir: str, options: BundlingOptions) -> bool:
@@ -541,6 +541,10 @@ class LocalBundler:
                 else:
                     shutil.copy2(source_item, destination_item)
 
-        copytree(self.source_root, python_output_dir)
+        destination_layer_folder = Path(python_output_dir, self.source_root.name)
+
+        destination_layer_folder.mkdir()
+
+        copytree(str(self.source_root), destination_layer_folder)
 
         return True
