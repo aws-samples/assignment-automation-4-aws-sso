@@ -269,7 +269,7 @@ class EnterpriseAwsSsoExecStack(Stack):
                     command=[
                         "bash",
                         "-c",
-                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{os.path.basename(common_layer_path)}/",
+                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{common_layer_path.name}/",
                     ],
                 ),
             ),
@@ -287,7 +287,7 @@ class EnterpriseAwsSsoExecStack(Stack):
                     command=[
                         "bash",
                         "-c",
-                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{os.path.basename(orgz_layer_path)}/",
+                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{orgz_layer_path.name}/",
                     ],
                 ),
             ),
@@ -305,7 +305,7 @@ class EnterpriseAwsSsoExecStack(Stack):
                     command=[
                         "bash",
                         "-c",
-                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{os.path.basename(sso_layer_path)}/",
+                        f"pip --no-cache-dir install -r requirements.txt -t /asset-output/python && cp -au . /asset-output/python/{sso_layer_path.name}/",
                     ],
                 ),
             ),
@@ -541,7 +541,7 @@ class LocalBundler:
                 else:
                     shutil.copy2(source_item, destination_item)
 
-        destination_layer_folder = Path(python_output_dir, os.path.basename(self.source_root))
+        destination_layer_folder = Path(python_output_dir, self.source_root.name)
 
         destination_layer_folder.mkdir()
 
