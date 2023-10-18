@@ -29,5 +29,5 @@ six==1.16.0
     # via python-dateutil
 smmap==5.0.0
     # via gitdb
-urllib3==1.26.16
+urllib3==1.26.18
     # via botocore
