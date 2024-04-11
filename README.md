@@ -74,7 +74,7 @@ To install provided module following prerequisites needs to be satisfied:
 
         env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
         --profile iam_profile \
-            --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+        --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
         --trust 11111111111 \
         aws://3333333333333/$AWS_DEFAULT_REGION
         ```

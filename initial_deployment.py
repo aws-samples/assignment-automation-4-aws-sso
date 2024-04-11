@@ -50,14 +50,17 @@ def main():
             )
             repo.git.add(all=True)
             repo.index.commit("initial commit")
-            remote = repo.create_remote(remote_name, url=repository_url)
             logging.info(repo_path)
-            time.sleep(30)
-            remote.push(codecommit_repository_branch_name)
+            os.listdir(repo_path)
     else:
         repo = Repo(app_source_path)
-        remote = repo.create_remote(remote_name, url=repository_url)
-        remote.push(codecommit_repository_branch_name)
+
+    remote = repo.create_remote(remote_name, url=repository_url, allow_unsafe_protocols=True)
+
+    # if args.no_history:
+    #     time.sleep(60)
+
+    remote.push(codecommit_repository_branch_name)
     logging.info("You can now run 'cdk deploy' to deploy the pipeline.")
 
 
@@ -74,6 +77,11 @@ if __name__ == "__main__":
     codecommit_repository_branch_name = cdk_context.get("codecommit_repository_branch_name", "main")
     remote_name = "codecommit"
 
-    region = os.environ.get("AWS_DEFAULT_REGION", os.environ["AWS_REGION"])
+    region = os.environ.get("AWS_DEFAULT_REGION", os.environ.get("AWS_REGION"))
+
+    if not region:
+        logging.error("Please set AWS_DEFAULT_REGION or AWS_REGION")
+        sys.exit(1)
+
     app_source_path = os.path.dirname(os.path.realpath(__file__))
     main()
