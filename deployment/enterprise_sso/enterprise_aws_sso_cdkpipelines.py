@@ -26,10 +26,17 @@ class EnterpriseSSOPipelineStack(Stack):
             self,
             "EnterpriseSSOCDKPipeline",
             pipeline_name="EnterpriseSSOCDKPipeline",
+            cross_account_keys=True,
             synth=CodeBuildStep(
                 "Synth",
                 input=CodePipelineSource.code_commit(
                     codecommit_repository, codecommit_repository_branch_name
+                ),
+                partial_build_spec=codebuild.BuildSpec.from_object(
+                    {
+                        "version": "0.2",
+                        "phases": {"install": {"runtime-versions": {"python": "3.12"}}},
+                    }
                 ),
                 build_environment=codebuild.BuildEnvironment(privileged=True),
                 commands=[
