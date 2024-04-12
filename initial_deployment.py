@@ -51,7 +51,6 @@ def main():
             repo.git.add(all=True)
             repo.index.commit("initial commit")
             logging.info(repo_path)
-            os.listdir(repo_path)
     else:
         repo = Repo(app_source_path)
 
