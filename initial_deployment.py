@@ -56,8 +56,6 @@ def main():
 
     remote = repo.create_remote(remote_name, url=repository_url, allow_unsafe_protocols=True)
 
-    # if args.no_history:
-    #     time.sleep(60)
 
     remote.push(codecommit_repository_branch_name)
     logging.info("You can now run 'cdk deploy' to deploy the pipeline.")
