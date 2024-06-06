@@ -8,6 +8,12 @@ from sqs import publish_sqs_task_for_execution
 from config import Config_object
 
 
+class PrincipalNotFound(Exception):
+    """Raised when a principal is not found in Identity Store"""
+
+    pass
+
+
 def process_mapdata(
     controller: Config_object,
     aws_principal: str,
@@ -37,15 +43,21 @@ def process_mapdata(
 
     accounts = None
     if idp_principal_type.lower() == "g":
-        idp_principal: dict = controller.clients.identity_store.list_groups(
-            IdentityStoreId=controller.clients.sso.identity_store_id,
-            Filters=[
-                {
-                    "AttributePath": "DisplayName",
-                    "AttributeValue": idp_principal_name,
-                }
-            ],
-        )["Groups"][0]
+        try:
+            idp_principal: dict = controller.clients.identity_store.list_groups(
+                IdentityStoreId=controller.clients.sso.identity_store_id,
+                Filters=[
+                    {
+                        "AttributePath": "DisplayName",
+                        "AttributeValue": idp_principal_name,
+                    }
+                ],
+            )["Groups"][0]
+        except IndexError as e:
+            controller.clients.logger.error(
+                f"Group {idp_principal['DisplayName']} is not found in identity store {controller.clients.sso.identity_store_id}."
+            )
+            raise PrincipalNotFound()
         controller.clients.logger.info(
             f"Group {idp_principal['DisplayName']} identified as: {idp_principal['GroupId']}."
         )

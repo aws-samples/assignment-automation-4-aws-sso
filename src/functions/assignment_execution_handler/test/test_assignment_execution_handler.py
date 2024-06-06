@@ -36,14 +36,16 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
     sso = sso_layer_mock.test_0_sso_list_instances()
 
     # Adding mocked SSO layer to lambda function
-    index.sso = sso
-    index.sso.client = sso_admin
+    index.sso_admin = sso
+    index.sso_admin.client = sso_admin
 
+    index.use_delegated_admin = False
     """
     Assignment execution create event test
     """
 
     def test_0_handler_assignment_execution_handler_create_success(self):
+
         self.sso_admin_stubber.add_response(
             "create_account_assignment",
             service_response={
@@ -53,10 +55,10 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
                     "PermissionSetArn": "arn:aws:sso:::permissionSet/ssoins-7223ac639f55e492/ps-504d6c2b57a3f2cb",
                     "PrincipalId": "string",
                     "PrincipalType": "string",
-                    "RequestId": "string",
+                    "RequestId": "h47hd9w5i0tv4x1q55f664arbe4ab2otges4",
                     "Status": "string",
-                    "TargetId": "string",
-                    "TargetType": "string",
+                    "TargetId": "dj358s9nldve",
+                    "TargetType": "AWS_ACCOUNT",
                 }
             },
             expected_params={
@@ -64,7 +66,7 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
                 "PermissionSetArn": "arn:aws:sso:::permissionSet/ssoins-7223ac639f55e492/ps-504d6c2b57a3f2cb",
                 "PrincipalId": "string",
                 "PrincipalType": "string",
-                "TargetId": "string",
+                "TargetId": "dj358s9nldve",
                 "TargetType": "AWS_ACCOUNT",
             },
         )
@@ -80,7 +82,7 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
     """
 
     def test_1_handler_assignment_execution_handler_delete_success(self):
-        index.sso.client = self.sso_admin
+        index.sso_admin.client = self.sso_admin
 
         self.sso_admin_stubber.add_response(
             "delete_account_assignment",
@@ -91,9 +93,9 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
                     "PermissionSetArn": "arn:aws:sso:::permissionSet/ssoins-7223ac639f55e492/ps-504d6c2b57a3f2cb",
                     "PrincipalId": "string",
                     "PrincipalType": "string",
-                    "RequestId": "string",
+                    "RequestId": "h47hd9w5i0tv4x1q55f664arbe4ab2otges4",
                     "Status": "string",
-                    "TargetId": "string",
+                    "TargetId": "dj358s9nldve",
                     "TargetType": "string",
                 }
             },
@@ -102,7 +104,7 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
                 "PermissionSetArn": "arn:aws:sso:::permissionSet/ssoins-7223ac639f55e492/ps-504d6c2b57a3f2cb",
                 "PrincipalId": "string",
                 "PrincipalType": "string",
-                "TargetId": "string",
+                "TargetId": "dj358s9nldve",
                 "TargetType": "AWS_ACCOUNT",
             },
         )

@@ -72,9 +72,10 @@ def handler(event, context):
     # check if delegated admin is enabled
     if use_delegated_admin is None:
         try:
-            response = assumed_admin_role_session.client(
+            org_client = assumed_admin_role_session.client(
                 "organizations"
-            ).list_delegated_administrators(
+            )
+            response = org_client.list_delegated_administrators(
                 ServicePrincipal="sso.amazonaws.com",
             )
             logger.info(response)
