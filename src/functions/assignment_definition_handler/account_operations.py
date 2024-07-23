@@ -4,7 +4,7 @@
 ################################################################################
 
 import json
-from processing import process_mapdata
+from processing import process_mapdata, PrincipalNotFound
 from config import Config_object
 
 
@@ -44,9 +44,11 @@ def account_operations_handler(controller: Config_object, payload: dict):
         controller.clients.logger.info(f"Organizations action detected. Account is moved")
         query_dynamo_table(
             controller,
-            "root"
-            if parent_old_ou_name.startswith("r-")
-            else controller.clients.org.describe_ou_name(parent_old_ou_name),
+            (
+                "root"
+                if parent_old_ou_name.startswith("r-")
+                else controller.clients.org.describe_ou_name(parent_old_ou_name)
+            ),
             account_id,
             controller.data.ACTION_TYPE_DELETE,
         )
@@ -77,11 +79,16 @@ def query_dynamo_table(controller, query_key, account_id, assignment_action):
             aws_principal, idp_principal, permission_set_name = item[
                 controller.config.map_sortkey_name
             ]["S"].split(controller.config.associationid_concat_char)
-            process_mapdata(
-                controller,
-                f"a:{account_id}",
-                idp_principal,
-                permission_set_name,
-                assignment_action,
-                item,
-            )
+            try:
+                process_mapdata(
+                    controller,
+                    f"a:{account_id}",
+                    idp_principal,
+                    permission_set_name,
+                    assignment_action,
+                    item,
+                )
+            except PrincipalNotFound as e:
+                controller.clients.logger.info(
+                    f"Principal {idp_principal} missing, moving on to next record from DynamoDB"
+                )
