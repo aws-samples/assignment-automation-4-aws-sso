@@ -5,7 +5,7 @@
 
 
 from typing import List
-from processing import process_mapdata
+from processing import process_mapdata, PrincipalNotFound
 from common.encoder import PythonObjectEncoder
 from config import Config_object
 import json
@@ -44,24 +44,29 @@ def assignments_operations_handler(controller: Config_object, records: list):
             .get(controller.config.permission_set_status)
             .get("S", "Enabled")
         )
-        if permission_set_state == "Enabled":
-            process_mapdata(
-                controller,
-                aws_principal,
-                idp_principal,
-                permission_set_name,
-                assignment_action,
-                record,
-            )
-        else:
+        try:
+            if permission_set_state == "Enabled":
+                process_mapdata(
+                    controller,
+                    aws_principal,
+                    idp_principal,
+                    permission_set_name,
+                    assignment_action,
+                    record,
+                )
+            else:
+                controller.clients.logger.info(
+                    f"Permission set {permission_set_name} is disabled. Removing permissions from AWS SSO"
+                )
+                process_mapdata(
+                    controller,
+                    aws_principal,
+                    idp_principal,
+                    permission_set_name,
+                    controller.data.ACTION_TYPE_DELETE,
+                    record,
+                )
+        except PrincipalNotFound:
             controller.clients.logger.info(
-                f"Permission set {permission_set_name} is disabled. Removing permissions from AWS SSO"
-            )
-            process_mapdata(
-                controller,
-                aws_principal,
-                idp_principal,
-                permission_set_name,
-                controller.data.ACTION_TYPE_DELETE,
-                record,
+                f"Principal {idp_principal} missing, moving on to next record from DynamoDB"
             )

@@ -88,7 +88,7 @@ def query_dynamo_table(controller, query_key, account_id, assignment_action):
                     assignment_action,
                     item,
                 )
-            except PrincipalNotFound as e:
+            except PrincipalNotFound:
                 controller.clients.logger.info(
                     f"Principal {idp_principal} missing, moving on to next record from DynamoDB"
                 )
