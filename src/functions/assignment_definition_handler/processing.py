@@ -55,7 +55,7 @@ def process_mapdata(
             )["Groups"][0]
         except IndexError as e:
             controller.clients.logger.error(
-                f"Group {idp_principal['DisplayName']} is not found in identity store {controller.clients.sso.identity_store_id}."
+                f"Group {idp_principal_name} is not found in identity store {controller.clients.sso.identity_store_id}."
             )
             raise PrincipalNotFound()
         controller.clients.logger.info(
