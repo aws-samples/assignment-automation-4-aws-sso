@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Mapping
 
 import jsii
-from aws_cdk import BundlingOptions, Duration, ILocalBundling, RemovalPolicy, Stack
+from aws_cdk import BundlingOptions, Duration, ILocalBundling, RemovalPolicy, Stack, Tags
 from aws_cdk import aws_dynamodb as ddb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as event_targets
@@ -16,6 +16,9 @@ from aws_cdk import aws_lambda_event_sources as lambda_event_sources
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_sub
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import aws_servicecatalogappregistry as appregistry
+from aws_cdk import aws_resourceexplorer2 as resourceexplorer2
+
 from constructs import Construct
 
 
@@ -61,8 +64,39 @@ class EnterpriseAwsSsoExecStack(Stack):
         assignment_definition_table_sort_key: str = context.get(
             "assignment_definition_table_sort_key", "mappingValue"
         )
+        application_name: str = context.get("application_name", "IdentityCenterAssignments")
 
-        lambda_runtime = _lambda.Runtime.PYTHON_3_12
+        lambda_runtime = _lambda.Runtime.PYTHON_3_13
+
+        # Application configuration
+
+        cfn_application = appregistry.CfnApplication(
+            self,
+            "app-registry-application",
+            name=application_name,
+        )
+
+        # Add awsApplication tag to Stack resources associated with Application to "onboard" application to the myApplications dashboard
+        Tags.of(self).add(
+            "awsApplication",
+            cfn_application.attr_application_tag_value,
+            exclude_resource_types=[cfn_application.cfn_resource_type, "aws:cdk:stack"],
+        )
+
+        # Resource explorer
+
+        cfn_index = resourceexplorer2.CfnIndex(
+            self,
+            "MyCfnIndex",
+            type="LOCAL",
+        )
+
+        cfn_view = resourceexplorer2.CfnView(
+            self,
+            "MyCfnView",
+            view_name="AllResources",
+            included_properties=[resourceexplorer2.CfnView.IncludedPropertyProperty(name="tags")],
+        )
 
         ## Event bus configuration
         self.ct_event_bus = events.EventBus(

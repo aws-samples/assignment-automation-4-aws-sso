@@ -63,8 +63,6 @@ def handler(event, context):
 
     if event_source == EVENT_SOURCE:
         permissions = event_detail.get("permissions")
-        target_principle = None
-        user_principle = None
 
         for permission_info in permissions:
             action_type = permission_info["ActionType"]
@@ -91,9 +89,10 @@ def handler(event, context):
                 target_principle = account_number
 
             elif permission_type == PERMISSION_FOR_TAG:
-                tag_name = permission_info["Tag"]
-                mapping_value_prefix = f"t:{tag_name}"
-                target_principle = tag_name
+                tag_key = permission_info["TagKey"]
+                tag_value = permission_info["TagValue"]
+                mapping_value_prefix = f"t:{tag_key}={tag_value}"
+                target_principle = tag_key
 
             elif permission_type == PERMISSION_FOR_ROOT:
                 mapping_value_prefix = f"r:root"

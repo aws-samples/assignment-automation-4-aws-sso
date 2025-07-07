@@ -20,7 +20,6 @@ def process_mapdata(
     idp_principal: str,
     permission_set_name: str,
     assignment_action: str,
-    record: str,
 ):
     aws_principal_type: str
     aws_principal_name: str
@@ -29,6 +28,11 @@ def process_mapdata(
     idp_principal_type: str
     idp_principal_name: str
     idp_principal_type, idp_principal_name = idp_principal.split(":")
+
+    # recombining for easier error tracing
+    record = controller.config.associationid_concat_char.join(
+        [aws_principal, idp_principal, permission_set_name]
+    )
 
     if permission_set_name in controller.data.permission_sets:
         permission_set: str = controller.data.permission_sets[permission_set_name]
@@ -41,7 +45,7 @@ def process_mapdata(
         controller.clients.error_handler.publish_error_message(record, error_msg)
         pass
 
-    accounts = None
+    accounts = []
     if idp_principal_type.lower() == "g":
         try:
             idp_principal: dict = controller.clients.identity_store.list_groups(

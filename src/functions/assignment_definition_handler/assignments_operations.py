@@ -44,28 +44,20 @@ def assignments_operations_handler(controller: Config_object, records: list):
             .get(controller.config.permission_set_status)
             .get("S", "Enabled")
         )
+
+        if stream_key == "NewImage" and permission_set_state != "Enabled":
+            controller.clients.logger.info(
+                f"Permission set {permission_set_name} is disabled. Removing permissions from AWS Identity Center"
+            )
+            assignment_action = controller.data.ACTION_TYPE_DELETE
         try:
-            if permission_set_state == "Enabled":
-                process_mapdata(
-                    controller,
-                    aws_principal,
-                    idp_principal,
-                    permission_set_name,
-                    assignment_action,
-                    record,
-                )
-            else:
-                controller.clients.logger.info(
-                    f"Permission set {permission_set_name} is disabled. Removing permissions from AWS SSO"
-                )
-                process_mapdata(
-                    controller,
-                    aws_principal,
-                    idp_principal,
-                    permission_set_name,
-                    controller.data.ACTION_TYPE_DELETE,
-                    record,
-                )
+            process_mapdata(
+                controller,
+                aws_principal,
+                idp_principal,
+                permission_set_name,
+                assignment_action,
+            )
         except PrincipalNotFound:
             controller.clients.logger.info(
                 f"Principal {idp_principal} missing, moving on to next record from DynamoDB"

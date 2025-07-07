@@ -13,22 +13,24 @@ To install provided module following prerequisites needs to be satisfied:
 - Docker - <https://docs.docker.com/get-docker/>
 - requirements from `requirements.txt` file installed into your python environment
 - At least 2 accounts:
-  - AWS Organizations Management account
-  - AWS account for Deployment and Execution
-- Deployment and Execution can be separate AWS accounts if required.
+  - AWS Organizations Management account (management account)
+  - AWS account for running the solution (execution account)
+- If using CDK pipelines, a Deployment AWS account can be used in addition. CDK pipelines can also be used from the execution account.
 
 ## Deployment notes
 
 1. Modify cdk.context.json with appropriate accounts information as well as variables and commit changes. At the bare minimum the following 4 parameters need to be changed:
     - *enterprise_sso_management_account_id*: AWS Account Id of the AWS Organization Management Account
     - *enterprise_sso_exec_account_id*: AWS Account Id where the application will be running in. Should NOT be the same as the AWS Organization management account.
-    - *enterprise_sso_deployment_account_id*: AWS Account Id that will have the AWS CodePipeline pipeline deployed to. Can be the same as *enterprise_sso_exec_account_id*
     - *error_notifications_email*: Notification email for error messages
 
-    **Make sure to commit these changes ot the local repository, or these changes will not propagate to AWS CodeCommit if using initial_deployment.py**
+  Optionally, you can set the following, if you are using CDK pipelines
+    - *enterprise_sso_deployment_account_id*: AWS Account Id that will have the AWS CodePipeline pipeline deployed to. Can be the same as *enterprise_sso_exec_account_id*
 
-1. Set `AWS_DEFAULT_REGION` environment variables to the desired value
-1. Bootstrap all AWS accounts using the new bootstrap style. More information [here](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping)(you can skip *--profile* is you are using ENV variables for providing AWS access credentials). You can deploy this solution in multiple regions or only `us-east-1` bootstrap instead and deploy everything to a single region. Event bridge configuration and support pipelines stack related to AWS Organization and AWS Identity Center will always be deployed to `us-east-1` region, thus requires a bootstrap in that region.
+    **Make sure to commit these changes ot the repository**
+
+1. Set the `AWS_DEFAULT_REGION` environment variable to the desired value
+1. Bootstrap all AWS accounts (you can skip *--profile* is you are using ENV variables for providing AWS access credentials). You can deploy this solution in any region, but the EventBridge configuration and support pipelines stack related to AWS Organization and AWS Identity Center will always be deployed to `us-east-1` region. us-east-1` bootstrap instead and deploy everything to a single region. EventBridge configuration and support pipelines stack related to AWS Organization and AWS Identity Center will always be deployed to `us-east-1` region, thus requires a bootstrap in that region. The rest of the solution can be deployed to other regions if desired.
 
     1. Bootstrap deployment account (`us-east-1`):
 

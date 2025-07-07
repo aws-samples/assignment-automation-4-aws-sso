@@ -17,22 +17,34 @@ def process_organizations_event(event: dict) -> Tuple[str, dict]:
     operation_event = {}
     try:
         event_name: str = event["detail"]["eventName"]
-        if event_name == "CreateAccountResult":
-            operation_event["Action"] = "created"
-            account_status: dict = event["detail"]["serviceEventDetails"]
-            account_state: str = account_status["state"]
-            if not account_state == "SUCCEEDED":
-                return operation_name, {}
-            operation_event["AccountId"] = account_status["account"]["accountId"]
-        elif event_name == "MoveAccount":
-            operation_event["Action"] = "moved"
-            request_parameters: dict = event["detail"].get("requestParameters")
-            operation_event["AccountId"] = request_parameters["accountId"]
-            operation_event["AccountOuName"] = request_parameters["destinationParentId"]
-            operation_event["AccountOldOuName"] = request_parameters["sourceParentId"]
-        else:
-            logger.error(f"Action for Lifecycle Event {event_name} not defined")
-            raise OrganizationsEventError("Action for Lifecycle Event not defined")
+        logger.info(f"event_name is {event_name}")
+        match event_name:
+            case "CreateAccountResult":
+                operation_event["Action"] = "created"
+                account_status: dict = event["detail"]["serviceEventDetails"]
+                account_state: str = account_status["state"]
+                if not account_state == "SUCCEEDED":
+                    return operation_name, {}
+                operation_event["AccountId"] = account_status["account"]["accountId"]
+            case "MoveAccount":
+                operation_event["Action"] = "moved"
+                request_parameters: dict = event["detail"].get("requestParameters")
+                operation_event["AccountId"] = request_parameters["accountId"]
+                operation_event["AccountOuName"] = request_parameters["destinationParentId"]
+                operation_event["AccountOldOuName"] = request_parameters["sourceParentId"]
+            case "TagResource":
+                operation_event["Action"] = "tagged"
+                request_parameters: dict = event["detail"].get("requestParameters")
+                operation_event["AccountId"] = request_parameters["resourceId"]
+                operation_event["AccountTags"] = request_parameters["tags"]
+            case "UntagResource":
+                operation_event["Action"] = "untagged"
+                request_parameters: dict = event["detail"].get("requestParameters")
+                operation_event["AccountId"] = request_parameters["resourceId"]
+                operation_event["AccountTagKeys"] = request_parameters["tagKeys"]
+            case _:
+                logger.error(f"Action for Lifecycle Event {event_name} not defined")
+                raise OrganizationsEventError("Action for Lifecycle Event not defined")
         return operation_name, operation_event
 
     except KeyError as e:

@@ -1,5 +1,5 @@
 {
-  "app": "python3 deployment/cdkpipelines_app.py",
+  "app": "python3 deployment/app.py",
   "context": {
     "@aws-cdk/core:newStyleStackSynthesis": "true"
   }

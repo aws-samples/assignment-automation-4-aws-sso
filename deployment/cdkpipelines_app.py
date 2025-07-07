@@ -16,7 +16,6 @@ if not region:
     print("Please set AWS_DEFAULT_REGION or AWS_REGION")
     sys.exit(1)
 
-
 EnterpriseSSOPipelineStack(
     app,
     "EnterpriseAWSSSOPipelineStack",

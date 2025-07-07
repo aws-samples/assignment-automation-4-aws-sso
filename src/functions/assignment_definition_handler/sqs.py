@@ -27,13 +27,13 @@ def publish_sqs_task_for_execution(
                 cls=PythonObjectEncoder,
             ),
         }
-        controller.clients.logger.info("Uppending entry to array")
-        controller.clients.logger.info(entry)
+        controller.clients.logger.debug("Appending entry to array")
+        controller.clients.logger.debug(entry)
         payload.append(entry)
 
         ## TODO refactor to look nice. Unfortunately we can send only in batches of 10.
         if (idx + 1) % 10 == 0:
-            controller.clients.logger.info("Publishing array")
+            controller.clients.logger.info(f"Publishing array of {len(payload)} records")
             results.append(
                 controller.clients.sqs.send_message_batch(
                     QueueUrl=controller.config.queue_url, Entries=payload
@@ -41,7 +41,7 @@ def publish_sqs_task_for_execution(
             )
             payload = []
     if payload:
-        controller.clients.logger.info("Publishing array")
+        controller.clients.logger.info(f"Publishing array of {len(payload)} records")
         results.append(
             controller.clients.sqs.send_message_batch(
                 QueueUrl=controller.config.queue_url, Entries=payload

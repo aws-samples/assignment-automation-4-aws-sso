@@ -62,7 +62,9 @@ def handler(event: EventBridgeEvent, context):
     event_type, processed_service_event = event_processors[event.source](event.raw_event)
 
     if processed_service_event:
+        logger.info(processed_service_event)
         send_event(event_type, processed_service_event)
+        logger.info("Event sent to EventBridge")
 
 
 class UnsupportedEvent(Exception):
