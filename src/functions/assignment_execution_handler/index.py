@@ -62,6 +62,8 @@ sso_admin_role_arn = os.getenv(
 assumed_admin_role_session = assume_role(session, sso_admin_role_arn)
 sso_admin = None
 
+report_batch_item_failures = os.getenv("REPORT_BATCH_ITEM_FAILURES", "false").lower() == "true"
+
 
 def handler(event, context):
     # TODO make proper call outside handler work with tests
@@ -95,8 +97,11 @@ def handler(event, context):
 
     logger.info("use_delegated_admin is set to " + str(use_delegated_admin))
 
+    batch_item_failures = []
+
     for record in event["Records"]:
         message = record["body"]
+        message_id = record["messageId"]
         logger.info(message)
         messageDict = json.loads(message)
         principal_type = messageDict["PrincipalType"]
@@ -143,12 +148,15 @@ def handler(event, context):
                 create_account_assignment(
                     message, principal_type, principal_id, permission_set_arn, target_id, sso
                 )
+            except sso.client.exceptions.ResourceNotFoundException:
+                logger.warning("Create skipped, target resource not found: " + message)
             except Exception as exception:
-                # If Exception occurs, parse Response and write it to Error Topic.
-                # Then, raise exception to not delete the message from queue.
                 logger.error("Exception: " + str(exception))
                 error_handler.publish_error_message(message, str(exception))
-                raise (exception)
+                if report_batch_item_failures:
+                    batch_item_failures.append({"itemIdentifier": message_id})
+                else:
+                    raise (exception)
 
         elif action == ACTION_TYPE_DELETE:
 
@@ -178,18 +186,27 @@ def handler(event, context):
                 delete_account_assignment(
                     principal_type, principal_id, permission_set_arn, target_id, sso
                 )
+            except sso.client.exceptions.ResourceNotFoundException:
+                logger.warning("Delete skipped, assignment already removed: " + message)
             except Exception as exception:
-                # If Exception occurs, parse Response and write it to Error Topic.
-                # Then, raise exception to not delete the message from queue.
                 logger.error("Exception: " + str(exception))
                 error_handler.publish_error_message(message, str(exception))
-                raise (exception)
+                if report_batch_item_failures:
+                    batch_item_failures.append({"itemIdentifier": message_id})
+                else:
+                    raise (exception)
 
         else:
             # Not supported action
             logger.info("Not supported action: " + str(message))
             error_handler.publish_error_message(message, "Not supported action.")
-            raise AttributeError
+            if report_batch_item_failures:
+                batch_item_failures.append({"itemIdentifier": message_id})
+            else:
+                raise AttributeError
+
+    if report_batch_item_failures:
+        return {"batchItemFailures": batch_item_failures}
 
     return {
         "statusCode": 200,

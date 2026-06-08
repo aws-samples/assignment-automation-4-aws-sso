@@ -5,7 +5,12 @@
 
 
 from typing import List
-from processing import process_mapdata, PrincipalNotFound
+from processing import (
+    process_mapdata,
+    PrincipalNotFound,
+    PermissionSetNotFound,
+    UnsupportedPrincipalType,
+)
 from common.encoder import PythonObjectEncoder
 from config import Config_object
 import json
@@ -61,4 +66,14 @@ def assignments_operations_handler(controller: Config_object, records: list):
         except PrincipalNotFound:
             controller.clients.logger.info(
                 f"Principal {idp_principal} missing, moving on to next record from DynamoDB"
+            )
+        except PermissionSetNotFound as exc:
+            controller.clients.logger.info(
+                f"Permission set {exc} missing in Identity Center, "
+                f"moving on to next record from DynamoDB"
+            )
+        except UnsupportedPrincipalType as exc:
+            controller.clients.logger.info(
+                f"Unsupported principal type {exc!r}, "
+                f"moving on to next record from DynamoDB"
             )

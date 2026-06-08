@@ -14,6 +14,18 @@ class PrincipalNotFound(Exception):
     pass
 
 
+class PermissionSetNotFound(Exception):
+    """Raised when a permission set is not found in Identity Center"""
+
+    pass
+
+
+class UnsupportedPrincipalType(Exception):
+    """Raised when a principal type is not supported"""
+
+    pass
+
+
 def process_mapdata(
     controller: Config_object,
     aws_principal: str,
@@ -35,7 +47,7 @@ def process_mapdata(
     )
 
     if permission_set_name in controller.data.permission_sets:
-        permission_set: str = controller.data.permission_sets[permission_set_name]
+        permission_set: dict = controller.data.permission_sets[permission_set_name]
         controller.clients.logger.info(
             f"PS {permission_set_name} identified as: {permission_set['PermissionSetArn']}"
         )
@@ -43,7 +55,7 @@ def process_mapdata(
         error_msg = f"Permission Set {permission_set_name} was not found."
         controller.clients.logger.error(error_msg)
         controller.clients.error_handler.publish_error_message(record, error_msg)
-        pass
+        raise PermissionSetNotFound(permission_set_name)
 
     accounts = []
     if idp_principal_type.lower() == "g":
@@ -81,7 +93,7 @@ def process_mapdata(
         error_msg = f'principal type {idp_principal_type} is not supported. Needs to be either a user ("u") or group ("g")'
         controller.clients.logger.error(error_msg)
         controller.clients.error_handler.publish_error_message(record, error_msg)
-        pass
+        raise UnsupportedPrincipalType(idp_principal_type)
     if aws_principal_type.lower() == "r":
         # Apply to all accounts that exist under root
         controller.clients.logger.info(
@@ -115,10 +127,10 @@ def process_mapdata(
         tag_key, tag_value = aws_principal_name.split("=")
         accounts = controller.clients.org.get_account_ids_for_tags({tag_key: tag_value})
     else:
-        error_msg = f'AWS principal type {aws_principal_type} is not supported. Needs to be one of following: root ("r"), organization unit ("o"), account ("a") or tag ("r")'
+        error_msg = f'AWS principal type {aws_principal_type} is not supported. Needs to be one of following: root ("r"), organization unit ("o"), account ("a") or tag ("t")'
         controller.clients.logger.error(error_msg)
         controller.clients.error_handler.publish_error_message(record, error_msg)
-        pass
+        raise UnsupportedPrincipalType(aws_principal_type)
     if accounts:
         publish_sqs_task_for_execution(
             controller,

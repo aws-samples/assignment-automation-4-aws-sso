@@ -40,6 +40,7 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
     index.sso_admin.client = sso_admin
 
     index.use_delegated_admin = False
+    index.report_batch_item_failures = True
     """
     Assignment execution create event test
     """
@@ -74,8 +75,7 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
 
         res = index.handler(event_input_data_create, {})
         assert res is not None
-        statusCode = res["statusCode"]
-        assert statusCode == 200
+        assert res == {"batchItemFailures": []}
 
     """
     Assignment execution delete event test
@@ -112,3 +112,4 @@ class TestApp(unittest.TestCase):  # pylint: disable=R0904,C0116
         self.sso_admin_stubber.activate()
         res = index.handler(event_input_data_delete, {})
         assert res is not None
+        assert res == {"batchItemFailures": []}

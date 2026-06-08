@@ -7,6 +7,8 @@ from typing import List, Mapping
 
 import jsii
 from aws_cdk import BundlingOptions, Duration, ILocalBundling, RemovalPolicy, Stack, Tags
+from aws_cdk import aws_cloudwatch as cloudwatch
+from aws_cdk import aws_cloudwatch_actions as cloudwatch_actions
 from aws_cdk import aws_dynamodb as ddb
 from aws_cdk import aws_events as events
 from aws_cdk import aws_events_targets as event_targets
@@ -65,6 +67,10 @@ class EnterpriseAwsSsoExecStack(Stack):
             "assignment_definition_table_sort_key", "mappingValue"
         )
         application_name: str = context.get("application_name", "IdentityCenterAssignments")
+        assignment_queue_max_receive_count: int = context.get(
+            "assignment_processing_queue_max_receive_count", 5
+        )
+        report_batch_item_failures: bool = context.get("report_batch_item_failures", False)
 
         lambda_runtime = _lambda.Runtime.PYTHON_3_13
 
@@ -152,6 +158,24 @@ class EnterpriseAwsSsoExecStack(Stack):
             stream=ddb.StreamViewType.NEW_AND_OLD_IMAGES,
         )
 
+        ## assignment task DLQ
+        self.assignment_processing_dlq = sqs.Queue(
+            self,
+            "assignment-processing-dlq",
+            queue_name=f"{assignment_processing_queue_name}-dlq",
+            encryption=sqs.QueueEncryption.KMS_MANAGED,
+            retention_period=Duration.days(14),
+        )
+
+        ## EventBridge target DLQ
+        self.eventbridge_target_dlq = sqs.Queue(
+            self,
+            "eventbridge-target-dlq",
+            queue_name=f"{application_name}-eventbridge-target-dlq",
+            encryption=sqs.QueueEncryption.KMS_MANAGED,
+            retention_period=Duration.days(14),
+        )
+
         ## assignment task queue
         self.assignment_processing_queue = sqs.Queue(
             self,
@@ -160,6 +184,22 @@ class EnterpriseAwsSsoExecStack(Stack):
             encryption=sqs.QueueEncryption.KMS_MANAGED,
             delivery_delay=Duration.seconds(sqs_delivery_delay_seconds),
             visibility_timeout=Duration.seconds(sqs_visibility_timeout_seconds),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=assignment_queue_max_receive_count,
+                queue=self.assignment_processing_dlq,
+            ),
+        )
+
+        ## DLQ alarms
+        self._alarm_on_dlq_messages(
+            queue=self.assignment_processing_dlq,
+            alarm_id="AssignmentProcessingDLQNotEmptyAlarm",
+            description="Messages have reached the assignment processing DLQ",
+        )
+        self._alarm_on_dlq_messages(
+            queue=self.eventbridge_target_dlq,
+            alarm_id="EventBridgeTargetDLQNotEmptyAlarm",
+            description="EventBridge target invocations have failed and reached the DLQ",
         )
 
         ## Permission management part
@@ -378,7 +418,12 @@ class EnterpriseAwsSsoExecStack(Stack):
             event_bus=self.ct_event_bus,
             event_pattern=events.EventPattern(source=["permissionEventSource"]),
             rule_name=f"Forwarding-to-db-assignment-handler",
-            targets=[event_targets.LambdaFunction(self.db_assignment_handler)],
+            targets=[
+                event_targets.LambdaFunction(
+                    self.db_assignment_handler,
+                    dead_letter_queue=self.eventbridge_target_dlq,
+                )
+            ],
         )
 
         # This function will process AWS Service Events and create application specific ones
@@ -413,7 +458,12 @@ class EnterpriseAwsSsoExecStack(Stack):
                 detail_type=["AWS Service Event via CloudTrail", "AWS API Call via CloudTrail"],
             ),
             rule_name=f"Forwarding-to-service-event-handler",
-            targets=[event_targets.LambdaFunction(self.service_event_handler)],
+            targets=[
+                event_targets.LambdaFunction(
+                    self.service_event_handler,
+                    dead_letter_queue=self.eventbridge_target_dlq,
+                )
+            ],
         )
 
         # This function will define the assignments from the metadata in DynamoDB
@@ -456,7 +506,12 @@ class EnterpriseAwsSsoExecStack(Stack):
                 account=[sso_exec_account_id], source=["enterprise-aws-sso"]
             ),
             rule_name=f"Forwarding-to-defenition-handler",
-            targets=[event_targets.LambdaFunction(self.assignment_definition_handler)],
+            targets=[
+                event_targets.LambdaFunction(
+                    self.assignment_definition_handler,
+                    dead_letter_queue=self.eventbridge_target_dlq,
+                )
+            ],
         )
 
         # setting the assignments topic as the event source for the execution lambda
@@ -499,13 +554,17 @@ class EnterpriseAwsSsoExecStack(Stack):
                 "ASSOCIATIONID_CONCAT_CHAR": "|",
                 "SSO_ADMIN_ROLE_ARN": f"arn:aws:iam::{management_account_id}:role/{sso_management_role}",
                 "MANAGEMENT_ACCOUNT_ID": management_account_id,
+                "REPORT_BATCH_ITEM_FAILURES": "true" if report_batch_item_failures else "false",
             },
         )
 
         # setting the assignments queue as the event source for the execution lambda
         self.assignment_execution_handler.add_event_source(
             lambda_event_sources.SqsEventSource(
-                self.assignment_processing_queue, batch_size=10, max_concurrency=2
+                self.assignment_processing_queue,
+                batch_size=10,
+                max_concurrency=2,
+                report_batch_item_failures=report_batch_item_failures,
             )
         )
 
@@ -536,6 +595,30 @@ class EnterpriseAwsSsoExecStack(Stack):
             )
             lambda_role.add_to_principal_policy(sts_policy)
         return lambda_role
+
+    def _alarm_on_dlq_messages(
+        self,
+        queue: sqs.Queue,
+        alarm_id: str,
+        description: str,
+    ) -> cloudwatch.Alarm:
+        alarm = cloudwatch.Alarm(
+            self,
+            alarm_id,
+            metric=queue.metric_approximate_number_of_messages_visible(
+                period=Duration.minutes(1),
+                statistic="Maximum",
+            ),
+            threshold=0,
+            evaluation_periods=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+            alarm_description=description,
+        )
+        alarm.add_alarm_action(
+            cloudwatch_actions.SnsAction(self.error_notification_topic)
+        )
+        return alarm
 
 
 @jsii.implements(ILocalBundling)

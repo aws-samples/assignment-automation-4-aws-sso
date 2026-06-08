@@ -4,7 +4,12 @@
 ################################################################################
 
 import json
-from processing import process_mapdata, PrincipalNotFound
+from processing import (
+    process_mapdata,
+    PrincipalNotFound,
+    PermissionSetNotFound,
+    UnsupportedPrincipalType,
+)
 from config import Config_object
 
 
@@ -207,3 +212,11 @@ def process_records(
         )
     except PrincipalNotFound:
         controller.clients.logger.info(f"Principal {idp_principal} missing in Identity Center")
+    except PermissionSetNotFound as exc:
+        controller.clients.logger.info(
+            f"Permission set {exc} missing in Identity Center, skipping account {account_id}"
+        )
+    except UnsupportedPrincipalType as exc:
+        controller.clients.logger.info(
+            f"Unsupported principal type {exc!r}, skipping account {account_id}"
+        )
